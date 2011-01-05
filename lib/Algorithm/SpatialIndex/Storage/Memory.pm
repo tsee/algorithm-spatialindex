@@ -20,7 +20,7 @@ sub init {
 sub fetch_node {
   my $self  = shift;
   my $index = shift;
-  my $nodes = $self->nodes;
+  my $nodes = $self->_nodes;
   return($index > $#$nodes ? undef : $nodes->[$index]);
 }
 
