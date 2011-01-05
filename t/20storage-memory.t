@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 4;
+use Test::More tests => 7;
 use Algorithm::SpatialIndex;
 
 my $tlibpath;
@@ -23,4 +23,10 @@ ok(!defined($storage->fetch_node(0)), 'No nodes to start with');
 ok(!defined($storage->fetch_node(1)), 'No nodes to start with');
 
 my $node = Algorithm::SpatialIndex::Node->new;
+my $id = $storage->store_node($node);
+ok(defined($id), 'New id assigned');
+is($node->id, $id, 'New id inserted');
+
+my $fetched = $storage->fetch_node($id);
+is_deeply($fetched, $node, 'Node retrievable');
 
