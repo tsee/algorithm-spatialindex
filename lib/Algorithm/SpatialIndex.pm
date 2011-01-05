@@ -61,7 +61,7 @@ sub _init_strategy {
   $self->{strategy} = $strategy->new(%$opt, index => $self);
 }
 
-sub init_storage {
+sub _init_storage {
   my $self = shift;
   my $opt = shift;
   my $storage = $opt->{storage};
