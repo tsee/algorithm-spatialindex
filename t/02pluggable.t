@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 9;
+use Test::More tests => 11;
 use Algorithm::SpatialIndex;
 
 my $tlibpath;
@@ -32,3 +32,5 @@ my $storage = $index->storage;
 isa_ok($storage, 'Algorithm::SpatialIndex::Storage');
 isa_ok($storage, 'Algorithm::SpatialIndex::Storage::Memory');
 
+is($strategy->no_of_subnodes, 4, 'Test default no of subnodes');
+is_deeply([$strategy->coord_types], [qw(double double)], 'Test default coord types');
