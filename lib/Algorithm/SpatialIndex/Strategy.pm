@@ -28,9 +28,9 @@ sub new {
   return $self;
 }
 
-sub no_of_subnodes {
-  croak("Not defined in the base class");
-}
+sub no_of_subnodes { 4 }
+
+sub coord_types { qw(double double) }
 
 1;
 __END__
@@ -66,7 +66,34 @@ fresh object in the constructor.
 Returns the number of subnodes per node. Required by the storage
 initialization.
 
-You need to implement this in your subclass.
+The default implementation returns 4 (for a quad tree).
+You may want to override that in your subclass.
+
+=head2 coord_types
+
+Returns (as a list) all coordinate types. If you need to store
+one x/y pair of floating point coordinates, you may return:
+
+  qw(double double)
+
+or if less precision is acceptable for space savings:
+
+  qw(float float)
+
+If you need to store three coordinates but only in one dimension,
+you simply do:
+
+  qw(float float float)
+
+The storage backend is free to upgrade a float to a double
+value and even an integer to a double.
+
+Valid coordinate types are:
+
+  float, double, integer, unsigned
+
+The default implementation returns C<qw(double double)>.
+You may want to override that in your subclass.
 
 =head1 AUTHOR
 
@@ -79,6 +106,5 @@ Copyright (C) 2010 by Steffen Mueller
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.1 or,
 at your option, any later version of Perl 5 you may have available.
-
 
 =cut
