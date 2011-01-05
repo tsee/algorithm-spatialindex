@@ -71,6 +71,18 @@ Calls your C<init> method if available.
 If your subcass implements this, it will be called on the
 fresh object in the constructor.
 
+=head2 fetch_node
+
+Fetch a node from storage by node id.
+
+Has to be implemented in a subclass.
+
+=head2 store_node
+
+Store the provided node while possibly assigning
+a new ID to it. Returns the (potentially new) node id.
+
+Has to be implemented in a subclass.
 
 =head1 AUTHOR
 
