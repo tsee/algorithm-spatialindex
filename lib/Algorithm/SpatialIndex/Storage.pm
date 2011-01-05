@@ -10,6 +10,7 @@ use Scalar::Util 'weaken';
 use Class::XSAccessor {
   getters => [qw(
     index
+    no_of_subnodes
   )],
 };
 
@@ -23,10 +24,22 @@ sub new {
 
   weaken($self->{index});
 
+  my $strategy = $self->index->strategy;
+  $self->{no_of_subnodes} = $strategy->no_of_subnodes;
+
   $self->init() if $self->can('init');
 
   return $self;
 }
+
+sub fetch_node {
+  croak("Not implemented in base class");
+}
+
+sub store_node {
+  croak("Not implemented in base class");
+}
+
 
 
 1;
@@ -44,6 +57,20 @@ Algorithm::SpatialIndex::Storage - Base class for storage backends
   );
 
 =head1 DESCRIPTION
+
+=head1 METHODS
+
+=head2 new
+
+Constructor. Called by the L<Algorithm::SpatialIndex>
+constructor. You probably do not need to call or implement this.
+Calls your C<init> method if available.
+
+=head2 init
+
+If your subcass implements this, it will be called on the
+fresh object in the constructor.
+
 
 =head1 AUTHOR
 

@@ -28,6 +28,9 @@ sub new {
   return $self;
 }
 
+sub no_of_subnodes {
+  croak("Not defined in the base class");
+}
 
 1;
 __END__
@@ -44,6 +47,26 @@ Algorithm::SpatialIndex::Strategy - Base class for indexing strategies
   );
 
 =head1 DESCRIPTION
+
+=head1 METHODS
+
+=head2 new
+
+Constructor. Called by the L<Algorithm::SpatialIndex>
+constructor. You probably do not need to call or implement this.
+Calls your C<init> method if available.
+
+=head2 init
+
+If your subcass implements this, it will be called on the
+fresh object in the constructor.
+
+=head2 no_of_subnodes
+
+Returns the number of subnodes per node. Required by the storage
+initialization.
+
+You need to implement this in your subclass.
 
 =head1 AUTHOR
 
