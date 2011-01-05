@@ -20,6 +20,7 @@ use Module::Pluggable (
   inner       => 0,
 );
 
+use Algorithm::SpatialIndex::Node;
 use Algorithm::SpatialIndex::Strategy;
 use Algorithm::SpatialIndex::Storage;
 
