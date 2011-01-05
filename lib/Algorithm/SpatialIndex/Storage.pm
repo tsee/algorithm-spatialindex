@@ -79,8 +79,11 @@ Has to be implemented in a subclass.
 
 =head2 store_node
 
-Store the provided node while possibly assigning
-a new ID to it. Returns the (potentially new) node id.
+Store the provided node. Assigns a new ID to it if it has none.
+Returns the (potentially new) node id.
+
+Note that general id handling is the task of the storage backend.
+Users or strategies should not set node ids.
 
 Has to be implemented in a subclass.
 
