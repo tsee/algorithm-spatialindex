@@ -29,7 +29,7 @@ sub store_node {
   my $node = shift;
   my $nodes = $self->_nodes;
   my $id = $node->id;
-  $id = $#$nodes + 1 not defined $id;  
+  $id = $#{$nodes} + 1 if not defined $id;  
   $nodes->[$id] = $node;
   return $id;
 }
