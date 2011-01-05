@@ -1,0 +1,13 @@
+Makefile
+Makefile.old
+Makefile.back
+_build
+blib
+Build
+MANIFEST.bak
+META.yml
+MYMETA.yml
+pod2htm?.tmp
+*~
+*.swp
+*.swo
