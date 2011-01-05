@@ -54,8 +54,6 @@ Inherits from L<Algorithm::SpatialIndex::Storage>.
 
 This storage backend is volatile.
 
-=head1 METHODS
-
 =head1 AUTHOR
 
 Steffen Mueller, E<lt>smueller@cpan.orgE<gt>
