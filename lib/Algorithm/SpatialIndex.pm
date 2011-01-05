@@ -38,8 +38,8 @@ sub new {
     %opt,
   } => $class;
 
-  $self->_init_storage(\%opt);
   $self->_init_strategy(\%opt);
+  $self->_init_storage(\%opt);
   return $self;
 }
 
