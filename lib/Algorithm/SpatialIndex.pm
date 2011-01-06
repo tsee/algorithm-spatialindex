@@ -41,6 +41,8 @@ sub new {
 
   $self->_init_strategy(\%opt);
   $self->_init_storage(\%opt);
+  $self->strategy->_set_storage($self->storage);
+
   return $self;
 }
 

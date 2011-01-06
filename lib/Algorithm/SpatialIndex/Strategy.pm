@@ -10,6 +10,7 @@ use Scalar::Util 'weaken';
 use Class::XSAccessor {
   getters => [qw(
     index
+    storage
   )],
 };
 
@@ -28,9 +29,20 @@ sub new {
   return $self;
 }
 
+sub _set_storage {
+  my $self = shift;
+  my $storage = shift;
+  $self->{storage} = $storage;
+  Scalar::Util::weaken($self->{storage});
+}
+
 sub no_of_subnodes { 4 }
 
 sub coord_types { qw(double double) }
+
+sub insert {
+  croak("insert needs to be implemented in a subclass");
+}
 
 1;
 __END__
@@ -94,6 +106,13 @@ Valid coordinate types are:
 
 The default implementation returns C<qw(double double)>.
 You may want to override that in your subclass.
+
+=head2 insert
+
+Inserts a new element into the index. Arguments:
+Element x/y coordinates, element (not node!) integer id.
+
+Needs to be implemented in a subclass.
 
 =head1 AUTHOR
 
