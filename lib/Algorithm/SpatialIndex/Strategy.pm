@@ -11,6 +11,7 @@ use Class::XSAccessor {
   getters => [qw(
     index
     storage
+    bucket_size
   )],
 };
 
@@ -27,6 +28,11 @@ sub new {
   $self->init() if $self->can('init');
 
   return $self;
+}
+
+sub _super_init_storage {
+  my $self = shift;
+  $self->init_storage if $self->can('init_storage');
 }
 
 sub _set_storage {

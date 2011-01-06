@@ -40,8 +40,12 @@ sub init_storage {
   my $index   = $self->index;
   my $storage = $self->storage;
 
-  $self->{top_node_id} = $storage->get_option('top_node_id');
+  # stored bucket_size for persistent indexes
+  $self->{bucket_size} = $storage->get_option('bucket_size');
+  # or use configured one
+  $self->{bucket_size} = $index->bucket_size if not defined $self->bucket_size;
 
+  $self->{top_node_id} = $storage->get_option('top_node_id');
   if (not defined $self->top_node_id) {
     # create a new top node
     my $node = Algorithm::SpatialIndex::Node->new(
@@ -52,6 +56,7 @@ sub init_storage {
     );
     $self->{top_node_id} = $storage->store_node($node);
   }
+
 }
 
 sub insert {
