@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 11;
+use Test::More tests => 13;
 use Algorithm::SpatialIndex;
 
 my $tlibpath;
@@ -15,6 +15,12 @@ my $index = Algorithm::SpatialIndex->new(
 );
 
 isa_ok($index, 'Algorithm::SpatialIndex');
+
+SCOPE: {
+  no warnings 'once';
+  ok($Algorithm::SpatialIndex::Strategy::Test::InitCalled, 'strategy init hook called');
+  ok($Algorithm::SpatialIndex::Strategy::Test::InitStorageCalled, 'strategy init_storage hook called');
+}
 
 my @strategies = $index->strategies;
 ok(scalar(@strategies) >= 1, 'Strategy available');

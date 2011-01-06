@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 7;
+use Test::More tests => 9;
 use Algorithm::SpatialIndex;
 
 my $tlibpath;
@@ -29,4 +29,8 @@ is($node->id, $id, 'New id inserted');
 
 my $fetched = $storage->fetch_node($id);
 is_deeply($fetched, $node, 'Node retrievable');
+
+$storage->set_option('foo', 'bar');
+is($storage->get_option('foo'), 'bar', 'get/set option works');
+is($storage->get_option('foo2'), undef, 'get/set option works for nonexistent keys');
 
