@@ -40,16 +40,16 @@ sub insert {
   my $storage = $self->storage;
 
   my $top_node = $storage->fetch_node($self->top_node_id);
+  return $self->_insert($x, $y, $id, $top_node);
+}
+
+sub _insert {
+  my ($self, $x, $y, $id, $node) = @_;
 }
 
 sub _new_node_coords {
-  my $self = shift;
-  my $xlow = shift;
-  my $xup  = shift;
-  my $ylow = shift;
-  my $yup  = shift;
-  
-  return( ($xlow+$xup)/2, ($ylow+$yup)/2 );
+  # args: $self, $xlow, $xup, $ylow, $yup
+  return( ($_[1]+$_[2])/2, ($_[3]+$_[4])/2 );
 }
 
 1;
