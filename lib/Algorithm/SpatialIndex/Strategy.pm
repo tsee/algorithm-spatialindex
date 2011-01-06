@@ -62,6 +62,13 @@ Algorithm::SpatialIndex::Strategy - Base class for indexing strategies
 
 =head1 METHODS
 
+=head2 insert
+
+Inserts a new element into the index. Arguments:
+Element x/y coordinates, element (not node!) integer id.
+
+Needs to be implemented in a subclass.
+
 =head2 new
 
 Constructor. Called by the L<Algorithm::SpatialIndex>
@@ -72,6 +79,11 @@ Calls your C<init> method if available.
 
 If your subcass implements this, it will be called on the
 fresh object in the constructor.
+
+=head2 init_storage
+
+If your subcass implements this, it will be called on the
+in the constructor after initializing its storage attribute.
 
 =head2 no_of_subnodes
 
@@ -106,13 +118,6 @@ Valid coordinate types are:
 
 The default implementation returns C<qw(double double)>.
 You may want to override that in your subclass.
-
-=head2 insert
-
-Inserts a new element into the index. Arguments:
-Element x/y coordinates, element (not node!) integer id.
-
-Needs to be implemented in a subclass.
 
 =head1 AUTHOR
 
