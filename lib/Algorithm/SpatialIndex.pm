@@ -59,10 +59,10 @@ sub _init_strategy {
   croak("Need strategy") if not defined $strategy;
   my @strategies = grep /\Q$strategy\E$/, $self->strategies;
   if (@strategies == 0) {
-    croak("Could not find specified strategies '$strategy'");
+    croak("Could not find specified strategy '$strategy'");
   }
   elsif (@strategies > 1) {
-    croak("Found multiple matching strategies for '$strategy': " . join(', ', @strategies));
+    croak("Found multiple matching strategy for '$strategy': " . join(', ', @strategies));
   }
   $strategy = shift @strategies;
   $self->{strategy} = $strategy->new(%$opt, index => $self);
