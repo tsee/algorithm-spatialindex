@@ -40,7 +40,13 @@ sub store_node {
   croak("Not implemented in base class");
 }
 
+sub get_option {
+  croak("Not implemented in base class");
+}
 
+sub set_option {
+  croak("Not implemented in base class");
+}
 
 1;
 __END__
@@ -84,6 +90,20 @@ Returns the (potentially new) node id.
 
 Note that general id handling is the task of the storage backend.
 Users or strategies should not set node ids.
+
+Has to be implemented in a subclass.
+
+=head2 set_option
+
+Takes a key/value pair for a tree property/option to be
+stored.
+
+Has to be implemented in a subclass.
+
+=head2 get_option
+
+Takes a key for a tree property/option to be
+fetched from storage.
 
 Has to be implemented in a subclass.
 
