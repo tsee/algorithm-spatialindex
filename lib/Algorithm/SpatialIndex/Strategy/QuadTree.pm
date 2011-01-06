@@ -6,6 +6,25 @@ use Carp qw(croak);
 
 use parent 'Algorithm::SpatialIndex::Strategy';
 
+# Note that the subnode indexes are as follows:
+# (like quadrants in planar geometry)
+#
+# /---\
+# |1|0|
+# |-+-|
+# |2+3|
+# \---/
+#
+
+use constant {
+  X => 0, # for access to node coords
+  Y => 1,
+  UPPER_RIGHT_NODE => 0,
+  UPPER_LEFT_NODE  => 1,
+  LOWER_LEFT_NODE  => 2,
+  LOWER_RIGHT_NODE => 3,
+};
+
 use Class::XSAccessor {
   getters => [qw(
     top_node_id
@@ -45,6 +64,29 @@ sub insert {
 
 sub _insert {
   my ($self, $x, $y, $id, $node) = @_;
+  my $nxy = $node->coords;
+  my $subnodes = $node->subnode_ids;
+
+  my $subnode_index;
+  if ($x <= $nxy->[X]) {
+    if ($y <= $nxy->[Y]) { $subnode_index = LOWER_LEFT_NODE }
+    else                 { $subnode_index = UPPER_LEFT_NODE }
+  }
+  else {
+    if ($y <= $nxy->[Y]) { $subnode_index = LOWER_RIGHT_NODE }
+    else                 { $subnode_index = UPPER_RIGHT_NODE }
+  }
+
+  if (not defined $subnodes->[$subnode_index]) {
+    die "implement";
+    # FIXME check this node's bucket? Create node?
+  }
+  else {
+    my $subnode = $self->storage->fetch_node($subnodes->[$subnode_index]);
+    croak("Need node '" .$subnodes->[$subnode_index] . '", but it is not in storage!')
+      if not defined $subnode;
+    return $self->_insert($x, $y, $id, $subnode);
+  }
 }
 
 sub _new_node_coords {
