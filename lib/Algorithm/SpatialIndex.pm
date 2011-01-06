@@ -28,6 +28,10 @@ use Class::XSAccessor {
   getters => [qw(
     strategy
     storage
+    limit_x_low
+    limit_x_up
+    limit_y_low
+    limit_y_up
   )],
 };
 
@@ -42,6 +46,7 @@ sub new {
   $self->_init_strategy(\%opt);
   $self->_init_storage(\%opt);
   $self->strategy->_set_storage($self->storage);
+  $self->strategy->init_storage() if $self->strategy->can('init_storage');
 
   return $self;
 }
@@ -91,7 +96,12 @@ Algorithm::SpatialIndex - Flexible 2D spacial indexing
 
   use Algorithm::SpatialIndex;
   my $idx = Algorithm::SpatialIndex->new(
-    # TODO
+    strategy    => 'QuadTree', # or others
+    storage     => 'Memory', # or others
+    limit_x_low => -100,
+    limit_x_up  => 100,
+    limit_y_low => -100,
+    limit_y_up  => 100,
   );
 
 =head1 DESCRIPTION
