@@ -40,6 +40,14 @@ sub store_node {
   croak("Not implemented in base class");
 }
 
+sub fetch_bucket {
+  croak("Not implemented in base class");
+}
+
+sub store_bucket {
+  croak("Not implemented in base class");
+}
+
 sub get_option {
   croak("Not implemented in base class");
 }
@@ -104,6 +112,20 @@ Has to be implemented in a subclass.
 
 Takes a key for a tree property/option to be
 fetched from storage.
+
+Has to be implemented in a subclass.
+
+=head2 fetch_bucket
+
+Takes a node id as argument and returns the bucket for this
+node (or undef on failure).
+
+Has to be implemented in a subclass.
+
+=head2 store_bucket
+
+Takes a node id and a bucket object and stores the bucket
+as the bucket for this node id.
 
 Has to be implemented in a subclass.
 
