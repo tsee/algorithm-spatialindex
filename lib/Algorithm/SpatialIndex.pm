@@ -40,6 +40,10 @@ sub new {
   my %opt = @_;
 
   my $self = bless {
+    limit_x_low => -100,
+    limit_x_up  => 100,
+    limit_y_low => -100,
+    limit_y_up  => 100,
     %opt,
   } => $class;
 
@@ -105,6 +109,11 @@ Algorithm::SpatialIndex - Flexible 2D spacial indexing
   );
 
 =head1 DESCRIPTION
+
+blah blah blah
+
+
+The index limits default to -100 to 100 in both dimensions.
 
 =head1 SEE ALSO
 
