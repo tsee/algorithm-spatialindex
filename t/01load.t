@@ -7,6 +7,7 @@ my @modules = (
   map { "Algorithm::SpatialIndex::" . $_ }
   qw(
     Node
+    Bucket
     Strategy
     Storage
     Storage::Memory

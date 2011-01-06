@@ -21,6 +21,7 @@ use Module::Pluggable (
 );
 
 use Algorithm::SpatialIndex::Node;
+use Algorithm::SpatialIndex::Bucket;
 use Algorithm::SpatialIndex::Strategy;
 use Algorithm::SpatialIndex::Storage;
 
