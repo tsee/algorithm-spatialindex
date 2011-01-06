@@ -8,8 +8,9 @@ use parent 'Algorithm::SpatialIndex::Storage';
 
 use Class::XSAccessor {
   getters => {
-    _nodes => 'nodes',
+    _nodes   => 'nodes',
     _options => 'options',
+    _buckets => 'buckets',
   },
 };
 
@@ -17,6 +18,7 @@ sub init {
   my $self = shift;
   $self->{nodes} = [];
   $self->{options} = {};
+  $self->{buckets} = {};
 }
 
 sub fetch_node {
@@ -45,11 +47,24 @@ sub get_option {
 }
 
 sub set_option {
-  my $self = shift;
-  my $key = shift;
+  my $self  = shift;
+  my $key   = shift;
   my $value = shift;
   $self->_options->{$key} = $value;
 }
+
+sub store_bucket {
+  my $self   = shift;
+  my $bucket = shift;
+  $self->_buckets->[$bucked->node_id] = $bucket;
+}
+
+sub fetch_bucket {
+  my $self    = shift;
+  my $node_id = shift;
+  return $self->_buckets->[$node_id];
+}
+
 
 1;
 __END__
