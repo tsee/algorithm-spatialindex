@@ -56,13 +56,23 @@ sub set_option {
 sub store_bucket {
   my $self   = shift;
   my $bucket = shift;
-  $self->_buckets->[$bucked->node_id] = $bucket;
+  $self->_buckets->[$bucket->node_id] = $bucket;
 }
 
 sub fetch_bucket {
   my $self    = shift;
   my $node_id = shift;
   return $self->_buckets->[$node_id];
+}
+
+sub delete_bucket {
+  my $self    = shift;
+  my $node_id = shift;
+  $node_id = $node_id->node_id if ref($node_id);
+  my $buckets = $self->_buckets;
+  $buckets->[$node_id] = undef;
+  pop(@$buckets) while not defined $buckets->[-1];
+  return();
 }
 
 

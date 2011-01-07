@@ -44,6 +44,10 @@ sub fetch_bucket {
   croak("Not implemented in base class");
 }
 
+sub delete_bucket {
+  croak("Not implemented in base class");
+}
+
 sub store_bucket {
   croak("Not implemented in base class");
 }
@@ -126,6 +130,13 @@ Has to be implemented in a subclass.
 
 Takes a node id and a bucket object and stores the bucket
 as the bucket for this node id.
+
+Has to be implemented in a subclass.
+
+=head2 delete_bucket
+
+Removes the given bucket (or bucket/node id) from the
+storage.
 
 Has to be implemented in a subclass.
 
