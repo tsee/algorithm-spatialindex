@@ -28,6 +28,7 @@ use constant {
 use Class::XSAccessor {
   getters => [qw(
     top_node_id
+    bucket_size
   )],
 };
 
@@ -72,6 +73,28 @@ sub _insert {
   my $nxy = $node->coords;
   my $subnodes = $node->subnode_ids;
 
+  my $storage = $self->storage;
+
+  # If we have a bucket, we are the last level of nodes
+  my $bucket = $storage->fetch_bucket($node->id);
+  if (defined $bucket) {
+    my $item_ids = $bucket->item_ids;
+    if (@$item_ids < $self->bucket_size) {
+      # sufficient space in bucket. Insert and return
+      push @{$item_ids}, $id;
+      $storage->store_bucket($bucket);
+      return();
+    }
+    else {
+      # bucket full, need to add new layer of nodes and split the bucket
+      $self->_split_node($node);
+      # refresh data that will have changed:
+      $node = $storage->fetch_node($node->id);
+      $subnodes = $node->subnode_ids;
+      # Now we just continue with the normal subnode checking below:
+    }
+  }
+
   my $subnode_index;
   if ($x <= $nxy->[X]) {
     if ($y <= $nxy->[Y]) { $subnode_index = LOWER_LEFT_NODE }
@@ -83,11 +106,10 @@ sub _insert {
   }
 
   if (not defined $subnodes->[$subnode_index]) {
-    die "implement";
     # FIXME check this node's bucket? Create node?
   }
   else {
-    my $subnode = $self->storage->fetch_node($subnodes->[$subnode_index]);
+    my $subnode = $storage->fetch_node($subnodes->[$subnode_index]);
     croak("Need node '" .$subnodes->[$subnode_index] . '", but it is not in storage!')
       if not defined $subnode;
     return $self->_insert($x, $y, $id, $subnode);
