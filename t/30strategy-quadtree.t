@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 50;
+use Test::More tests => 57;
 use Algorithm::SpatialIndex;
 
 my $tlibpath;
@@ -93,5 +93,7 @@ foreach my $coords ([12, -2],
          '>=', $coords->[0], 'Node upper x boundary okay');
   cmp_ok($node_coords->[Algorithm::SpatialIndex::Strategy::QuadTree::YUP()],
          '>=', $coords->[1], 'Node upper y boundary okay');
+
+  ok(defined($index->storage->fetch_bucket($node->id)), 'Node has bucket == leaf');
 }
 
