@@ -143,6 +143,8 @@ Right now, this package ships with a quad tree implementation
 (L<Algorithm::SpatialIndex::Strategy::QuadTree>) and an in-memory
 storage backend (L<Algorithm::SpatialIndex::Storage::Memory>).
 
+B<NOTE: This is an experimental release. There must be bugs.>
+
 =head2 new
 
 Creates a new spatial index. Requires the following parameters:
