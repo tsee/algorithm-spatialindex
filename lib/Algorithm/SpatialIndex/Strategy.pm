@@ -50,6 +50,14 @@ sub insert {
   croak("insert needs to be implemented in a subclass");
 }
 
+sub find_node_for {
+  croak("find_node_for needs to be implemented in a subclass");
+}
+
+sub find_nodes_for {
+  croak("find_nodes_for needs to be implemented in a subclass");
+}
+
 1;
 __END__
 
@@ -72,6 +80,22 @@ Algorithm::SpatialIndex::Strategy - Base class for indexing strategies
 
 Inserts a new element into the index. Arguments:
 Element (not node!) integer id, Element x/y coordinates.
+
+Needs to be implemented in a subclass.
+
+=head2 find_node_for
+
+Given a pair of x/y coordinates, returns
+the L<Algorithm::SpatialIndex::Node>
+that contains the given point.
+
+Needs to be implemented in a subclass.
+
+=head2 find_nodes_for
+
+Given two pairs of x/y coordinates, returns
+all L<Algorithm::SpatialIndex::Node>s that are completely
+or partly within the rectangle defined by the two points.
 
 Needs to be implemented in a subclass.
 
