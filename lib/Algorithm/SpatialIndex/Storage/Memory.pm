@@ -8,9 +8,7 @@ use parent 'Algorithm::SpatialIndex::Storage';
 
 use Class::XSAccessor {
   getters => {
-    _nodes   => 'nodes',
     _options => 'options',
-    _buckets => 'buckets',
   },
 };
 
@@ -24,14 +22,14 @@ sub init {
 sub fetch_node {
   my $self  = shift;
   my $index = shift;
-  my $nodes = $self->_nodes;
+  my $nodes = $self->{nodes};
   return($index > $#$nodes ? undef : $nodes->[$index]);
 }
 
 sub store_node {
   my $self = shift;
   my $node = shift;
-  my $nodes = $self->_nodes;
+  my $nodes = $self->{nodes};
   my $id = $node->id;
   if (not defined $id) {
     $id = $#{$nodes} + 1;
@@ -56,20 +54,20 @@ sub set_option {
 sub store_bucket {
   my $self   = shift;
   my $bucket = shift;
-  $self->_buckets->[$bucket->node_id] = $bucket;
+  $self->{buckets}->[$bucket->node_id] = $bucket;
 }
 
 sub fetch_bucket {
   my $self    = shift;
   my $node_id = shift;
-  return $self->_buckets->[$node_id];
+  return $self->{buckets}->[$node_id];
 }
 
 sub delete_bucket {
   my $self    = shift;
   my $node_id = shift;
   $node_id = $node_id->node_id if ref($node_id);
-  my $buckets = $self->_buckets;
+  my $buckets = $self->{buckets};
   $buckets->[$node_id] = undef;
   pop(@$buckets) while @$buckets and not defined $buckets->[-1];
   return();
