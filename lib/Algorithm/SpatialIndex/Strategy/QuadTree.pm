@@ -222,6 +222,7 @@ sub find_node_for {
   my $topnode = $storage->fetch_node($self->top_node_id);
   my $coords = $topnode->coords;
 
+  # boundary check
   if ($x < $coords->[XLOW]
       or $x > $coords->[XUP]
       or $y < $coords->[YLOW]
@@ -258,6 +259,41 @@ SCOPE: {
   }
 } # end SCOPE
 
+
+sub find_nodes_for {
+  my ($self, $x1, $y1, $x2, $y2) = @_;
+
+  # normalize coords
+  my ($xl, $xu) = $x1 < $x2 ? ($x1, $x2) : ($x2, $x1);
+  my ($yl, $yu) = $y1 < $y2 ? ($y1, $y2) : ($y2, $y1);
+
+  my $storage = $self->storage;
+  my $topnode = $storage->fetch_node($self->top_node_id);
+  my $coords = $topnode->coords;
+
+}
+
+# Returns the leaves for the given node
+sub _get_all_leaf_nodes {
+  my $self = shift;
+  my $node = shift;
+  my $storage = $self->storage;
+
+  my @leaves;
+  my @nodes = ($node);
+  while (@nodes) {
+    $node = shift @nodes;
+    my $snode_ids = $node->subnode_ids;
+    if (@$snode_ids) {
+      push @nodes, map $storage->fetch_node($_), @$snode_ids;
+    }
+    else {
+      push @leaves, $node;
+    }
+  }
+
+  return @leaves;
+}
 
 1;
 __END__
