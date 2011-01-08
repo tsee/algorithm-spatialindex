@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 19;
+use Test::More tests => 50;
 use Algorithm::SpatialIndex;
 
 my $tlibpath;
@@ -17,7 +17,7 @@ my $index = Algorithm::SpatialIndex->new(
   limit_y_low => $limits[1],
   limit_x_up  => $limits[2],
   limit_y_up  => $limits[3],
-  bucket_size => 100,
+  bucket_size => 5,
 );
 
 isa_ok($index, 'Algorithm::SpatialIndex');
@@ -63,6 +63,35 @@ foreach my $x (map {$_/$scale} $limits[0]*$scale..$limits[2]*$scale) {
     $index->insert($i++, $x, $y);
   }
 }
-diag("Inserted $i nodes");
+#diag("Inserted $i nodes");
 
+foreach my $coords ([0, 0],
+                    [100, 100],
+                    [-12, 14])
+{
+  ok(!defined($strategy->find_node_for(@$coords)), 'Coords outside index have no node');
+}
+
+
+#my @limits = qw(12 -2 15 7);
+foreach my $coords ([12, -2],
+                    [12, 7],
+                    [15, -2],
+                    [15, 7],
+                    [14.123, 4.09],
+                    [13.123, -1.09],
+                    [13, 0])
+{
+  my $node = $strategy->find_node_for(@$coords);
+  # This test is using internal info about the strategy's coordinates
+  my $node_coords = $node->coords;
+  cmp_ok($node_coords->[Algorithm::SpatialIndex::Strategy::QuadTree::XLOW()],
+         '<=', $coords->[0], 'Node lower x boundary okay');
+  cmp_ok($node_coords->[Algorithm::SpatialIndex::Strategy::QuadTree::YLOW()],
+         '<=', $coords->[1], 'Node lower y boundary okay');
+  cmp_ok($node_coords->[Algorithm::SpatialIndex::Strategy::QuadTree::XUP()],
+         '>=', $coords->[0], 'Node upper x boundary okay');
+  cmp_ok($node_coords->[Algorithm::SpatialIndex::Strategy::QuadTree::YUP()],
+         '>=', $coords->[1], 'Node upper y boundary okay');
+}
 
