@@ -58,6 +58,11 @@ sub new {
   return $self;
 }
 
+sub insert {
+  my $self = shift;
+  return $self->strategy->insert(@_);
+}
+
 sub _init_strategy {
   my $self = shift;
   my $opt = shift;
