@@ -97,6 +97,16 @@ sub insert {
   return $self->strategy->insert(@_);
 }
 
+sub get_items_in_rect {
+  my ($self, @rect) = @_;
+  my $storage = $self->storage;
+  return grep $_->[1] >= $rect[0] && $_->[1] <= $rect[2] &&
+              $_->[2] >= $rect[1] && $_->[2] <= $rect[3],
+         map {@{$_->items}}
+         map $storage->fetch_bucket($_->id),
+         $self->strategy->find_nodes_for(@rect);
+}
+
 1;
 __END__
 
@@ -114,15 +124,72 @@ Algorithm::SpatialIndex - Flexible 2D spacial indexing
     limit_x_up  => 100,
     limit_y_low => -100,
     limit_y_up  => 100,
+    bucket_size => 100,
   );
+  
+  # fill (many times with different values):
+  $idx->insert($id, $x, $y);
+  
+  # query
+  my @items = $idx->get_items_in_rect($xlow, $ylow, $xup, $yup);
+  # @items now contains 0 or more array refs [$id, $x, $y]
 
 =head1 DESCRIPTION
 
-blah blah blah
+A generic implementation of spatial (2D) indexes with support for
+pluggable algorithms (henceforth: I<strategies>) and storage backends.
 
+Right now, this package ships with a quad tree implementation
+(L<Algorithm::SpatialIndex::Strategy::QuadTree>) and an in-memory
+storage backend (L<Algorithm::SpatialIndex::Storage::Memory>).
 
-The index limits default to -100 to 100 in both dimensions.
+=head2 new
+
+Creates a new spatial index. Requires the following parameters:
+
+=over 2
+
+=item strategy
+
+The strategy to use. This is the part of the strategy class name after a leading
+C<Algorithm::SpatialIndex::Strategy::>.
+
+=item storage
+
+The storage backend to use. This is the part of the storage class name after a leading
+C<Algorithm::SpatialIndex::Storage::>.
+
+=back
+
+The following parameters are optional:
+
+=over 2
+
+=item limit_x_low limit_x_up limit_y_low limit_y_up
+
+The upper/lower limits of the x/y dimensions of the index. Defaults to
+C<[-100, 100]> for both dimensions.
+
+=item bucket_size
+
+The number of items to store in a single leaf node (bucket). If this
+number is exceeded by an insertion, the node is split up according
+to the chosen strategy.
+
 C<bucket_size> defaults to 100.
+
+=head2 insert
+
+Insert a new item into the index. Takes the unique
+item id, an x-, and a y coordinate as arguments.
+
+=head2 get_items_in_rect
+
+Given the coordinates of two points that define a rectangle,
+this method finds all items within that rectangle.
+
+Returns a list of array references each of which
+contains the id and coordinates of a single item.
 
 =head1 SEE ALSO
 
