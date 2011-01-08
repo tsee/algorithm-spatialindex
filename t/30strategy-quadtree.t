@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 57;
+use Test::More tests => 61;
 use Algorithm::SpatialIndex;
 
 my $tlibpath;
@@ -96,4 +96,20 @@ foreach my $coords ([12, -2],
 
   ok(defined($index->storage->fetch_bucket($node->id)), 'Node has bucket == leaf');
 }
+
+
+#my @limits = qw(12 -2 15 7);
+foreach my $coords ([12, -2, 15, 7],
+                    [10, -5, 19, 9],
+                    [13, -5, 14, 9],
+                    [12.1, 0.1, 13.05, 0.5],
+                    )
+{
+  my @nodes = $strategy->find_nodes_for(@$coords);
+  ok(
+    ( 0 == grep {!defined($index->storage->fetch_bucket($_->id))} @nodes ),
+    'Node has bucket == leaf'
+  );
+}
+
 
