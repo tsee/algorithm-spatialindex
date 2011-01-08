@@ -17,8 +17,12 @@ use parent 'Algorithm::SpatialIndex::Strategy';
 #
 
 use constant {
-  X => 0, # for access to node coords
-  Y => 1,
+  XI   => 1, # item X coord index
+  YI   => 2, # item Y coord index
+  XLOW => 0, # for access to node coords
+  YLOW => 1,
+  XUP  => 2,
+  YUP  => 3,
   UPPER_RIGHT_NODE => 0,
   UPPER_LEFT_NODE  => 1,
   LOWER_LEFT_NODE  => 2,
@@ -48,14 +52,15 @@ sub init_storage {
 
   $self->{top_node_id} = $storage->get_option('top_node_id');
   if (not defined $self->top_node_id) {
-    # create a new top node
+    # create a new top node and its bucket
     my $node = Algorithm::SpatialIndex::Node->new(
       coords => [
-        $self->_new_node_coords($index->limit_x_low, $index->limit_x_up,
-                                $index->limit_y_low, $index->limit_y_up)
+        $index->limit_x_low, $index->limit_y_low,
+        $index->limit_x_up, $index->limit_y_up
       ],
     );
     $self->{top_node_id} = $storage->store_node($node);
+    $self->_make_bucket_for_node($node, $storage);
   }
 
 }
@@ -78,16 +83,16 @@ sub _insert {
   # If we have a bucket, we are the last level of nodes
   my $bucket = $storage->fetch_bucket($node->id);
   if (defined $bucket) {
-    my $item_ids = $bucket->item_ids;
-    if (@$item_ids < $self->bucket_size) {
+    my $items = $bucket->items;
+    if (@$items < $self->bucket_size) {
       # sufficient space in bucket. Insert and return
-      push @{$item_ids}, $id;
+      push @{$items}, [$id, $x, $y];
       $storage->store_bucket($bucket);
       return();
     }
     else {
       # bucket full, need to add new layer of nodes and split the bucket
-      $self->_split_node($node);
+      $self->_split_node($node, $bucket);
       # refresh data that will have changed:
       $node = $storage->fetch_node($node->id);
       $subnodes = $node->subnode_ids;
@@ -96,13 +101,13 @@ sub _insert {
   }
 
   my $subnode_index;
-  if ($x <= $nxy->[X]) {
-    if ($y <= $nxy->[Y]) { $subnode_index = LOWER_LEFT_NODE }
-    else                 { $subnode_index = UPPER_LEFT_NODE }
+  if ($x <= ($nxy->[XLOW]+$nxy->[XUP])/2) {
+    if ($y <= ($nxy->[YLOW]+$nxy->[YUP])/2) { $subnode_index = LOWER_LEFT_NODE }
+    else                                    { $subnode_index = UPPER_LEFT_NODE }
   }
   else {
-    if ($y <= $nxy->[Y]) { $subnode_index = LOWER_RIGHT_NODE }
-    else                 { $subnode_index = UPPER_RIGHT_NODE }
+    if ($y <= ($nxy->[YLOW]+$nxy->[YUP])/2) { $subnode_index = LOWER_RIGHT_NODE }
+    else                                    { $subnode_index = UPPER_RIGHT_NODE }
   }
 
   if (not defined $subnodes->[$subnode_index]) {
@@ -116,9 +121,87 @@ sub _insert {
   }
 }
 
-sub _new_node_coords {
-  # args: $self, $xlow, $xup, $ylow, $yup
-  return( ($_[1]+$_[2])/2, ($_[3]+$_[4])/2 );
+sub _node_center_coords{
+  # args: $self, $xlow, $ylow, $xup, $yup
+  return( ($_[1]+$_[3])/2, ($_[2]+$_[4])/2 );
+}
+
+
+# Splits the given node into four new nodes of equal
+# size and assigns the items
+sub _split_node {
+  my $self        = shift;
+  my $parent_node = shift;
+  my $bucket      = shift; # just for speed, can be taken from parent_node
+
+  my $storage = $self->storage;
+  my $parent_node_id = $parent_node->id;
+  $bucket = $storage->fetch_bucket($parent_node_id) if not defined $bucket;
+  
+  my $coords = $parent_node->coords;
+  my ($centerx, $centery) = $self->_node_center_coords(@$coords);
+  my @child_nodes;
+
+  # UPPER_RIGHT_NODE => 0
+  push @child_nodes, Algorithm::SpatialIndex::Node->new(
+    coords      => [$centerx, $centery, $coords->[XUP], $coords->[YUP]],
+    subnode_ids => [],
+  );
+  # UPPER_LEFT_NODE => 1
+  push @child_nodes, Algorithm::SpatialIndex::Node->new(
+    coords      => [$coords->[XLOW], $centery, $centerx, $coords->[YUP]],
+    subnode_ids => [],
+  );
+  # LOWER_LEFT_NODE => 2
+  push @child_nodes, Algorithm::SpatialIndex::Node->new(
+    coords      => [$coords->[XLOW], $coords->[YLOW], $centerx, $centery],
+    subnode_ids => [],
+  );
+  # LOWER_RIGHT_NODE => 3
+  push @child_nodes, Algorithm::SpatialIndex::Node->new(
+    coords      => [$centerx, $coords->[YLOW], $coords->[XUP], $centery],
+    subnode_ids => [],
+  );
+
+  # split bucket
+  my $items = $bucket->items;
+  my @child_items = ([], [], [], []);
+  foreach my $item (@$items) {
+    if ($item->[XI] <= $centerx) {
+      if ($item->[YI] <= $centery) { push @{$child_items[LOWER_LEFT_NODE]}, $item }
+      else                         { push @{$child_items[UPPER_LEFT_NODE]}, $item }
+    }
+    else {
+      if ($item->[YI] <= $centery) { push @{$child_items[LOWER_RIGHT_NODE]}, $item }
+      else                         { push @{$child_items[UPPER_RIGHT_NODE]}, $item }
+    }
+  }
+  
+  # generate buckets
+  foreach my $subnode_idx (0..3) {
+    $self->_make_bucket_for_node(
+      $child_nodes[$subnode_idx],
+      $storage,
+      $child_items[$subnode_idx]
+    );
+  }
+
+  # remove the parent node's bucket
+  $storage->delete_bucket($bucket);
+}
+
+sub _make_bucket_for_node {
+  my $self = shift;
+  my $node_id = shift;
+  my $storage = shift || $self->storage;
+  my $items = shift || [];
+  $node_id = $node_id->id if ref $node_id;
+
+  my $b = Algorithm::SpatialIndex::Bucket->new(
+    node_id => $node_id,
+    items   => $items,
+  );
+  $storage->store_bucket($b);
 }
 
 1;
