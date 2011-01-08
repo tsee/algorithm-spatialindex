@@ -71,7 +71,7 @@ sub delete_bucket {
   $node_id = $node_id->node_id if ref($node_id);
   my $buckets = $self->_buckets;
   $buckets->[$node_id] = undef;
-  pop(@$buckets) while not defined $buckets->[-1];
+  pop(@$buckets) while @$buckets and not defined $buckets->[-1];
   return();
 }
 
