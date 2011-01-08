@@ -126,7 +126,7 @@ SCOPE: {
   }
 } # end SCOPE
 
-sub _node_center_coords{
+sub _node_center_coords {
   # args: $self, $xlow, $ylow, $xup, $yup
   return( ($_[1]+$_[3])/2, ($_[2]+$_[4])/2 );
 }
@@ -214,6 +214,50 @@ sub _make_bucket_for_node {
   );
   $storage->store_bucket($b);
 }
+
+
+sub find_node_for {
+  my ($self, $x, $y) = @_;
+  my $storage = $self->storage;
+  my $topnode = $storage->fetch_node($self->top_node_id);
+  my $coords = $topnode->coords;
+
+  if ($x < $coords->[XLOW]
+      or $x > $coords->[XUP]
+      or $y < $coords->[YLOW]
+      or $y > $coords->[YUP]) {
+    return undef;
+  }
+
+  return $self->_find_node_for($x, $y, $storage, $topnode);
+}
+
+# TODO: This is almost trivial to rewrite in non-recursive form
+SCOPE: {
+  no warnings 'recursion';
+  sub _find_node_for {
+    my ($self, $x, $y, $storage, $node) = @_;
+
+    my $snode_ids = $node->subnode_ids;
+    return $node if not @$snode_ids;
+
+    # find the right sub node
+    my ($centerx, $centery) = $self->_node_center_coords(@{$node->coords});
+    my $subnode_id;
+    if ($x <= $centerx) {
+      if ($y <= $centery) { $subnode_id = $snode_ids->[LOWER_LEFT_NODE] }
+      else                { $subnode_id = $snode_ids->[UPPER_LEFT_NODE] }
+    }
+    else {
+      if ($y <= $centery) { $subnode_id = $snode_ids->[LOWER_RIGHT_NODE] }
+      else                { $subnode_id = $snode_ids->[UPPER_RIGHT_NODE] }
+    }
+
+    my $snode = $storage->fetch_node($subnode_id);
+    return $self->_find_node_for($x, $y, $storage, $snode);
+  }
+} # end SCOPE
+
 
 1;
 __END__
