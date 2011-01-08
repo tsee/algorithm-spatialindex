@@ -94,7 +94,7 @@ sub _init_storage {
 
 sub insert {
   my $self = shift;
-  return $self->strategy->insert(@_);
+  return $self->{strategy}->insert(@_);
 }
 
 sub get_items_in_rect {

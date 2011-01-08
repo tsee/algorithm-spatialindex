@@ -69,27 +69,24 @@ sub init_storage {
 
 sub insert {
   my ($self, $id, $x, $y) = @_;
-  my $storage = $self->storage;
-
-  my $top_node = $storage->fetch_node($self->top_node_id);
-  return $self->_insert($id, $x, $y, $top_node);
+  my $storage = $self->{storage}; # hash access due to hot path
+  my $top_node = $storage->fetch_node($self->{top_node_id}); # hash access due to hot path
+  return $self->_insert($id, $x, $y, $top_node, $storage);
 }
 
 SCOPE: {
   no warnings 'recursion';
   sub _insert {
-    my ($self, $id, $x, $y, $node) = @_;
+    my ($self, $id, $x, $y, $node, $storage) = @_;
     my $nxy = $node->coords;
     my $subnodes = $node->subnode_ids;
-
-    my $storage = $self->storage;
 
     # If we have a bucket, we are the last level of nodes
     SCOPE: {
       my $bucket = $storage->fetch_bucket($node->id);
       if (defined $bucket) {
         my $items = $bucket->items;
-        if (@$items < $self->bucket_size) {
+        if (@$items < $self->{bucket_size}) {
           # sufficient space in bucket. Insert and return
           push @{$items}, [$id, $x, $y];
           $storage->store_bucket($bucket);
@@ -123,7 +120,7 @@ SCOPE: {
       my $subnode = $storage->fetch_node($subnodes->[$subnode_index]);
       die("Need node '" .$subnodes->[$subnode_index] . '", but it is not in storage!')
         if not defined $subnode;
-      return $self->_insert($id, $x, $y, $subnode);
+      return $self->_insert($id, $x, $y, $subnode, $storage);
     }
   }
 } # end SCOPE
