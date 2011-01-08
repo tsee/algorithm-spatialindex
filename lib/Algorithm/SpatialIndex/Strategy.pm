@@ -148,6 +148,8 @@ Valid coordinate types are:
 
   float, double, integer, unsigned
 
+The integer types will be treated as C longs (likely 32bit).
+
 The default implementation returns
 C<qw(double double double double)> for storing two x/y
 coordinate pairs.
