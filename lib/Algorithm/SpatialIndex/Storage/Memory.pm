@@ -18,7 +18,7 @@ sub init {
   my $self = shift;
   $self->{nodes} = [];
   $self->{options} = {};
-  $self->{buckets} = {};
+  $self->{buckets} = [];
 }
 
 sub fetch_node {
