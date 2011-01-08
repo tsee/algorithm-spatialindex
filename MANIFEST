@@ -1,0 +1,17 @@
+examples/bench.pl
+examples/profile.pl
+lib/Algorithm/SpatialIndex.pm
+lib/Algorithm/SpatialIndex/Bucket.pm
+lib/Algorithm/SpatialIndex/Node.pm
+lib/Algorithm/SpatialIndex/Storage.pm
+lib/Algorithm/SpatialIndex/Storage/Memory.pm
+lib/Algorithm/SpatialIndex/Strategy.pm
+lib/Algorithm/SpatialIndex/Strategy/QuadTree.pm
+Makefile.PL
+MANIFEST			This list of files
+README
+t/01load.t
+t/02pluggable.t
+t/20storage-memory.t
+t/30strategy-quadtree.t
+t/lib/Algorithm/SpatialIndex/Strategy/Test.pm
