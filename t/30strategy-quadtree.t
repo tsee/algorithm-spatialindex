@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 61;
+use Test::More tests => 63;
 use Algorithm::SpatialIndex;
 
 my $tlibpath;
@@ -57,10 +57,10 @@ SCOPE: {
 
 
 my $scale = 2;
-my $i = 0;
+my $item_id = 0;
 foreach my $x (map {$_/$scale} $limits[0]*$scale..$limits[2]*$scale) {
   foreach my $y (map {$_/$scale} $limits[1]*$scale..$limits[3]*$scale) {
-    $index->insert($i++, $x, $y);
+    $index->insert($item_id++, $x, $y);
   }
 }
 #diag("Inserted $i nodes");
@@ -112,4 +112,12 @@ foreach my $coords ([12, -2, 15, 7],
   );
 }
 
+#my @limits = qw(12 -2 15 7);
+foreach my $coords ([12, -2, 15, 7],
+                    [10, -5, 19, 9],
+                    )
+{
+  my @items = $index->get_items_in_rect(@$coords);
+  is(scalar(@items), $item_id, 'Encompassing coords get all elems');
+}
 
