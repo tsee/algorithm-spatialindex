@@ -89,6 +89,8 @@ Given a pair of x/y coordinates, returns
 the L<Algorithm::SpatialIndex::Node>
 that contains the given point.
 
+Returns undef if the point is outside of the index range.
+
 Needs to be implemented in a subclass.
 
 =head2 find_nodes_for
