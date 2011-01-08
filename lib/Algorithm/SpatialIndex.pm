@@ -58,11 +58,6 @@ sub new {
   return $self;
 }
 
-sub insert {
-  my $self = shift;
-  return $self->strategy->insert(@_);
-}
-
 sub _init_strategy {
   my $self = shift;
   my $opt = shift;
@@ -95,6 +90,11 @@ sub _init_storage {
   }
   $storage = shift @storage_backends;
   $self->{storage} = $storage->new(index => $self, opt => $opt);
+}
+
+sub insert {
+  my $self = shift;
+  return $self->strategy->insert(@_);
 }
 
 1;
