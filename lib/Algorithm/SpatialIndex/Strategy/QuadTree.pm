@@ -58,68 +58,73 @@ sub init_storage {
         $index->limit_x_low, $index->limit_y_low,
         $index->limit_x_up, $index->limit_y_up
       ],
+      subnode_ids => [],
     );
     $self->{top_node_id} = $storage->store_node($node);
     $self->_make_bucket_for_node($node, $storage);
   }
-
 }
 
 sub insert {
-  my ($self, $x, $y, $id) = @_;
+  my ($self, $id, $x, $y) = @_;
   my $storage = $self->storage;
 
   my $top_node = $storage->fetch_node($self->top_node_id);
-  return $self->_insert($x, $y, $id, $top_node);
+  return $self->_insert($id, $x, $y, $top_node);
 }
 
-sub _insert {
-  my ($self, $x, $y, $id, $node) = @_;
-  my $nxy = $node->coords;
-  my $subnodes = $node->subnode_ids;
+SCOPE: {
+  no warnings 'recursion';
+  sub _insert {
+    my ($self, $id, $x, $y, $node) = @_;
+    my $nxy = $node->coords;
+    my $subnodes = $node->subnode_ids;
 
-  my $storage = $self->storage;
+    my $storage = $self->storage;
 
-  # If we have a bucket, we are the last level of nodes
-  my $bucket = $storage->fetch_bucket($node->id);
-  if (defined $bucket) {
-    my $items = $bucket->items;
-    if (@$items < $self->bucket_size) {
-      # sufficient space in bucket. Insert and return
-      push @{$items}, [$id, $x, $y];
-      $storage->store_bucket($bucket);
-      return();
+    # If we have a bucket, we are the last level of nodes
+    SCOPE: {
+      my $bucket = $storage->fetch_bucket($node->id);
+      if (defined $bucket) {
+        my $items = $bucket->items;
+        if (@$items < $self->bucket_size) {
+          # sufficient space in bucket. Insert and return
+          push @{$items}, [$id, $x, $y];
+          $storage->store_bucket($bucket);
+          return();
+        }
+        else {
+          # bucket full, need to add new layer of nodes and split the bucket
+          $self->_split_node($node, $bucket);
+          # refresh data that will have changed:
+          $node = $storage->fetch_node($node->id); # has updated subnode ids
+          $subnodes = $node->subnode_ids;
+          # Now we just continue with the normal subnode checking below:
+        }
+      }
+    } # end scope
+
+    my $subnode_index;
+    if ($x <= ($nxy->[XLOW]+$nxy->[XUP])/2) {
+      if ($y <= ($nxy->[YLOW]+$nxy->[YUP])/2) { $subnode_index = LOWER_LEFT_NODE }
+      else                                    { $subnode_index = UPPER_LEFT_NODE }
     }
     else {
-      # bucket full, need to add new layer of nodes and split the bucket
-      $self->_split_node($node, $bucket);
-      # refresh data that will have changed:
-      $node = $storage->fetch_node($node->id);
-      $subnodes = $node->subnode_ids;
-      # Now we just continue with the normal subnode checking below:
+      if ($y <= ($nxy->[YLOW]+$nxy->[YUP])/2) { $subnode_index = LOWER_RIGHT_NODE }
+      else                                    { $subnode_index = UPPER_RIGHT_NODE }
+    }
+
+    if (not defined $subnodes->[$subnode_index]) {
+      die("Cannot find subnode $subnode_index if node id=".$node->id);
+    }
+    else {
+      my $subnode = $storage->fetch_node($subnodes->[$subnode_index]);
+      die("Need node '" .$subnodes->[$subnode_index] . '", but it is not in storage!')
+        if not defined $subnode;
+      return $self->_insert($id, $x, $y, $subnode);
     }
   }
-
-  my $subnode_index;
-  if ($x <= ($nxy->[XLOW]+$nxy->[XUP])/2) {
-    if ($y <= ($nxy->[YLOW]+$nxy->[YUP])/2) { $subnode_index = LOWER_LEFT_NODE }
-    else                                    { $subnode_index = UPPER_LEFT_NODE }
-  }
-  else {
-    if ($y <= ($nxy->[YLOW]+$nxy->[YUP])/2) { $subnode_index = LOWER_RIGHT_NODE }
-    else                                    { $subnode_index = UPPER_RIGHT_NODE }
-  }
-
-  if (not defined $subnodes->[$subnode_index]) {
-    # FIXME check this node's bucket? Create node?
-  }
-  else {
-    my $subnode = $storage->fetch_node($subnodes->[$subnode_index]);
-    croak("Need node '" .$subnodes->[$subnode_index] . '", but it is not in storage!')
-      if not defined $subnode;
-    return $self->_insert($x, $y, $id, $subnode);
-  }
-}
+} # end SCOPE
 
 sub _node_center_coords{
   # args: $self, $xlow, $ylow, $xup, $yup
@@ -137,7 +142,7 @@ sub _split_node {
   my $storage = $self->storage;
   my $parent_node_id = $parent_node->id;
   $bucket = $storage->fetch_bucket($parent_node_id) if not defined $bucket;
-  
+
   my $coords = $parent_node->coords;
   my ($centerx, $centery) = $self->_node_center_coords(@$coords);
   my @child_nodes;
@@ -162,6 +167,12 @@ sub _split_node {
     coords      => [$centerx, $coords->[YLOW], $coords->[XUP], $centery],
     subnode_ids => [],
   );
+
+  # save nodes
+  my $snode_ids = $parent_node->subnode_ids;
+  foreach my $cnode (@child_nodes) {
+    push @{$snode_ids}, $storage->store_node($cnode);
+  }
 
   # split bucket
   my $items = $bucket->items;
