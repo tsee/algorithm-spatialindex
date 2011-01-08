@@ -273,6 +273,40 @@ sub find_nodes_for {
   my $topnode = $storage->fetch_node($self->top_node_id);
   my $coords = $topnode->coords;
 
+  my $rv = [];
+  _find_nodes_for($self, $xl, $yl, $xu, $yu, $storage, $topnode, $rv);
+  return @$rv;
+}
+
+sub _find_nodes_for {
+  my ($self, $xl, $yl, $xu, $yu, $storage, $node, $rv) = @_;
+  
+  my $coords = $node->coords;
+
+  # boundary check
+  if (   $xu < $coords->[XLOW]
+      or $xl > $coords->[XUP]
+      or $yu < $coords->[YLOW]
+      or $yl > $coords->[YUP])
+  {
+    return;
+  }
+
+  my $snode_ids = $node->subnode_ids;
+  if (not @$snode_ids) {
+    # leaf
+    push @$rv, $node;
+    return;
+  }
+
+  # not a leaf
+  foreach my $id (@$snode_ids) {
+    $self->_find_nodes_for(
+      $xl, $yl, $xu, $yu, $storage,
+      $storage->fetch_node($id),
+      $rv
+    );
+  }
 }
 
 # Returns the leaves for the given node
