@@ -44,7 +44,7 @@ sub _set_storage {
 
 sub no_of_subnodes { 4 }
 
-sub coord_types { qw(double double) }
+sub coord_types { qw(double double double double) }
 
 sub insert {
   croak("insert needs to be implemented in a subclass");
@@ -122,7 +122,9 @@ Valid coordinate types are:
 
   float, double, integer, unsigned
 
-The default implementation returns C<qw(double double)>.
+The default implementation returns
+C<qw(double double double double)> for storing two x/y
+coordinate pairs.
 You may want to override that in your subclass.
 
 =head1 AUTHOR

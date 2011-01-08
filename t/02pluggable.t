@@ -39,4 +39,4 @@ isa_ok($storage, 'Algorithm::SpatialIndex::Storage');
 isa_ok($storage, 'Algorithm::SpatialIndex::Storage::Memory');
 
 is($strategy->no_of_subnodes, 4, 'Test default no of subnodes');
-is_deeply([$strategy->coord_types], [qw(double double)], 'Test default coord types');
+is_deeply([$strategy->coord_types], [qw(double double double double)], 'Test default coord types');
