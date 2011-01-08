@@ -17,12 +17,14 @@ use parent 'Algorithm::SpatialIndex::Strategy';
 #
 
 use constant {
-  XI   => 1, # item X coord index
-  YI   => 2, # item Y coord index
-  XLOW => 0, # for access to node coords
-  YLOW => 1,
-  XUP  => 2,
-  YUP  => 3,
+  XI               => 1, # item X coord index
+  YI               => 2, # item Y coord index
+
+  XLOW             => 0, # for access to node coords
+  YLOW             => 1,
+  XUP              => 2,
+  YUP              => 3,
+
   UPPER_RIGHT_NODE => 0,
   UPPER_LEFT_NODE  => 1,
   LOWER_LEFT_NODE  => 2,
