@@ -71,7 +71,7 @@ Algorithm::SpatialIndex::Strategy - Base class for indexing strategies
 =head2 insert
 
 Inserts a new element into the index. Arguments:
-Element x/y coordinates, element (not node!) integer id.
+Element (not node!) integer id, Element x/y coordinates.
 
 Needs to be implemented in a subclass.
 
