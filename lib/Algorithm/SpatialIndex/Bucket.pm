@@ -8,7 +8,7 @@ use Class::XSAccessor {
   constructor => 'new',
   accessors => [qw(
     node_id
-    item_ids
+    items
   )],
 };
 
@@ -39,10 +39,14 @@ Constructor
 Read/write accessor for the id of the node that this bucket
 corresponds to.
 
-=head2 item_ids
+=head2 items
 
 Read/write accessor for the array ref (or undef if not
-initialized) of item ids in this bucket.
+initialized) of items in this bucket.
+An item is defined to be an unblessed array references
+containing the item id followed by the item coordinates.
+The type and number of coordinates may depend on the
+chosen index C<Strategy>.
 
 =head1 AUTHOR
 
