@@ -234,7 +234,7 @@ sub _write_config {
   );
 
   my $success = eval {
-    foreach my $key (keys %{$self->{config}) {
+    foreach my $key (keys %{$self->{config}}) {
       $isth->execute($key, $self->{config}{$key}); 1;
       $usth->execute($key, $self->{config}{$key}, $key); 1;
     }
