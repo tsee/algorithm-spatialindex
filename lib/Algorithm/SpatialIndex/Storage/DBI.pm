@@ -8,6 +8,32 @@ our $VERSION = '0.01';
 
 use parent 'Algorithm::SpatialIndex::Storage';
 
+=head1 NAME
+
+Algorithm::SpatialIndex::Storage::DBI - DBI storage backend
+
+=head1 SYNOPSIS
+
+  use Algorithm::SpatialIndex;
+  my $dbh = ...;
+  my $idx = Algorithm::SpatialIndex->new(
+    storage      => 'DBI',
+    dbh_rw       => $dbh,
+    dbh_ro       => $dbh, # defaults to dbh_rw
+    table_prefix => 'si_',
+  );
+
+=head1 DESCRIPTION
+
+Inherits from L<Algorithm::SpatialIndex::Storage>.
+
+This storage backend is persistent.
+
+=head1 ACCESSORS
+
+=cut
+
+
 use constant NODE_ID_TYPE => 'INTEGER UNSIGNED';
 
 use Class::XSAccessor {
@@ -22,6 +48,44 @@ use Class::XSAccessor {
   )],
 };
 
+=head2 table_prefix
+
+Returns the prefix of the table names.
+
+=head2 node_coord_sql
+
+Returns the precomputed SQL fragment of the node coordinate
+columns (C<CREATE TABLE> syntax).
+
+=head2 coord_types
+
+Returns an array reference containing the coordinate type strings.
+
+=head2 no_of_subnodes
+
+Returns the no. of subnodes per node.
+
+=head2 subnodes_sql
+
+Returns the precomputed SQL fragment of the subnode id
+columns (C<CREATE TABLE> syntax).
+
+=head2 config
+
+Returns the hash reference of configuration options
+read from the config table.
+
+=head2 dbh_rw
+
+Returns the read/write database handle.
+
+=head2 dbh_ro
+
+Returns the read-only database handle. Falls back
+to the read/write handle if not defined.
+
+=cut
+
 sub dbh_ro {
   my $self = shift;
   if (defined $self->{dbh_ro}) {
@@ -29,6 +93,18 @@ sub dbh_ro {
   }
   return $self->{dbh_rw};
 }
+
+=head1 OTHER METHODS
+
+=head2 init
+
+Reads the options from the database for previously existing indexes.
+Creates tables and writes default configuration for those that didn't
+exist before.
+
+Doesn't do any schema migration at this point.
+
+=cut
 
 sub init {
   my $self = shift;
@@ -48,6 +124,15 @@ sub init {
   
   $self->_write_config() if not $config_existed;
 }
+
+=head2 _read_config_table
+
+Reads the configuration table.
+Returns whether this succeeded or not.
+In case of failure, this initializes some of the
+configuration options from other sources.
+
+=cut
 
 sub _read_config_table {
   my $self = shift;
@@ -84,9 +169,14 @@ sub _read_config_table {
   return $success;
 }
 
+=head2 _init_tables
+
+Creates the index's tables.
+
+=cut
+
 sub _init_tables {
   my $self = shift;
-  my $config_existed = shift;
 
   my $dbh = $self->dbh_rw;
 
@@ -113,6 +203,13 @@ sub _init_tables {
     #
   );
 }
+
+=head2 _write_config
+
+Writes the index's configuration to the
+configuration table.
+
+=cut
 
 sub _write_config {
   my $self = shift;
@@ -204,6 +301,17 @@ sub delete_bucket {
 }
 
 
+=head2 _coord_types_to_sql
+
+Given an array ref containing coordinate type strings
+(cf. L<Algorithm::SpatialIndex::Strategy>),
+returns a string of column specifications for interpolation
+into a C<CREATE TABLE>.
+
+The coordinates will be called C<c$i> where C<$i>
+starts at 0.
+
+=cut
 
 sub _coord_types_to_sql {
   my $self = shift;
@@ -226,6 +334,17 @@ sub _coord_types_to_sql {
   return $sql;
 }
 
+=head2 _subnodes_sql
+
+Given the number of subnodes per node,
+creates a string of column specifications
+for interpolation into a C<CREATE TABLE>.
+
+The columns are named C<sn$i> with C<$i>
+starting at 0.
+
+=cut
+
 sub _subnodes_sql {
   my $self = shift;
   my $no_subnodes = shift;
@@ -241,27 +360,6 @@ sub _subnodes_sql {
 
 1;
 __END__
-
-=head1 NAME
-
-Algorithm::SpatialIndex::Storage::DBI - DBI storage backend
-
-=head1 SYNOPSIS
-
-  use Algorithm::SpatialIndex;
-  my $dbh = ...;
-  my $idx = Algorithm::SpatialIndex->new(
-    storage      => 'DBI',
-    dbh_rw       => $dbh,
-    dbh_ro       => $dbh, # defaults to dbh_rw
-    table_prefix => 'si_',
-  );
-
-=head1 DESCRIPTION
-
-Inherits from L<Algorithm::SpatialIndex::Storage>.
-
-This storage backend is persistent.
 
 =head1 AUTHOR
 
