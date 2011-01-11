@@ -11,6 +11,7 @@ my @modules = (
     Strategy
     Storage
     Storage::Memory
+    Storage::DBI
     Strategy::QuadTree
   )
 );
