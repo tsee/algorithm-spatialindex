@@ -7,7 +7,7 @@ use Carp qw(croak);
 our $VERSION = '0.01';
 
 use parent 'Algorithm::SpatialIndex::Storage';
-use constant DEBUG => 1;
+use constant DEBUG => 0;
 
 =head1 NAME
 
@@ -41,11 +41,25 @@ use Class::XSAccessor {
   getters => [qw(
     dbh_rw
     table_prefix
-    node_coord_sql
+
+    no_of_coords
     coord_types
+    node_coord_create_sql
+    node_coord_select_sql
+
     no_of_subnodes
-    subnodes_sql
+    subnodes_create_sql
+    subnodes_select_sql
+
+    fetch_node_sql
+
     config
+
+    dbms_name
+    is_mysql
+    is_sqlite
+
+    _write_config_sql
   )],
 };
 
@@ -53,20 +67,20 @@ use Class::XSAccessor {
 
 Returns the prefix of the table names.
 
-=head2 node_coord_sql
-
-Returns the precomputed SQL fragment of the node coordinate
-columns (C<CREATE TABLE> syntax).
-
 =head2 coord_types
 
 Returns an array reference containing the coordinate type strings.
+
+=head2 node_coord_create_sql
+
+Returns the precomputed SQL fragment of the node coordinate
+columns (C<CREATE TABLE> syntax).
 
 =head2 no_of_subnodes
 
 Returns the no. of subnodes per node.
 
-=head2 subnodes_sql
+=head2 subnodes_create_sql
 
 Returns the precomputed SQL fragment of the subnode id
 columns (C<CREATE TABLE> syntax).
@@ -117,9 +131,41 @@ sub init {
                           ? $opt->{table_prefix} : 'spatialindex';
   delete $self->{opt};
 
+  # Dear SQL. Please go away. Thank you.
+  $self->{dbms_name} = $self->dbh_ro->get_info(17) if not defined $self->{dbms_name};
+  $self->{is_mysql}  = 0;
+  $self->{is_sqlite} = 0;
+  my $option_table_name = $self->{table_prefix} . '_options';
+  if ($self->{dbms_name} =~ /mysql/i) {
+    $self->{is_mysql} = 1;
+    $self->{_write_config_sql} = [
+      qq{
+        INSERT INTO $option_table_name
+        SET id=?, value=?
+        ON DUPLICATE KEY UPDATE id=?, value=?
+      }, 0, 1, 0, 1
+    ];
+  }
+  elsif ($self->{dbms_name} =~ /sqlite/i) {
+    $self->{is_sqlite} = 1;
+    $self->{_write_config_sql} = [qq{INSERT OR REPLACE INTO $option_table_name (id, value) VALUES(?, ?)}, 0, 1 ];
+  }
+  else {
+    $self->{_write_config_sql} = sub {
+      my $dbh = shift;
+      eval {
+        $dbh->do(qq{INSERT INTO $option_table_name (id, value) VALUES(?, ?)}, {}, $_[0], $_[1]);
+        $dbh->do(qq{UPDATE $option_table_name SET id=?, value=?}, {}, $_[0], $_[1]);
+        1;
+      };
+    };
+  }
+
   my $config_existed = $self->_read_config_table;
-  $self->{node_coord_sql} = $self->_coord_types_to_sql($self->coord_types);
-  $self->{subnodes_sql}   = $self->_subnodes_sql($self->no_of_subnodes);
+  $self->{no_of_coords} = scalar(@{$self->coord_types});
+  $self->_coord_types_to_sql($self->coord_types);
+  $self->_subnodes_sql($self->no_of_subnodes);
+  $self->{fetch_node_sql} = qq(SELECT id, $self->{node_coord_select_sql}, $self->{subnodes_select_sql} FROM $self->{table_prefix}_nodes WHERE id=?);
 
   $self->_init_tables();
 
@@ -140,18 +186,21 @@ sub _read_config_table {
   my $dbh = $self->dbh_ro;
   my $table_prefix = $self->table_prefix;
 
+  my $find_sth = $dbh->table_info('%', '%', "${table_prefix}_options", 'TABLE');
   my $opt;
-  my $sql = qq#
-        SELECT id, value
-        FROM ${table_prefix}_options
-      #;
-  warn $sql if DEBUG;
-  my $success = eval {
-    $opt = $dbh->selectall_hashref($sql, 'id');
-    my $err = $dbh->errstr;
-    die $err if $err;
-    1;
-  };
+  my $success;
+  if ($find_sth->fetchrow_arrayref()) {
+    my $sql = qq#
+          SELECT id, value
+          FROM ${table_prefix}_options
+        #;
+    $success = eval {
+      $opt = $dbh->selectall_hashref($sql, 'id');
+      my $err = $dbh->errstr;
+      die $err if $err;
+      1;
+    };
+  }
   $opt ||= {};
   $self->{config} = $opt;
 
@@ -191,8 +240,8 @@ sub _init_tables {
   $dbh->do($sql_opt);
 
   my $node_id_type = NODE_ID_TYPE;
-  my $coord_sql = $self->node_coord_sql;
-  my $subnodes_sql = $self->subnodes_sql;
+  my $coord_sql = $self->node_coord_create_sql;
+  my $subnodes_sql = $self->subnodes_create_sql;
   my $sql =  qq(
     CREATE TABLE IF NOT EXISTS ${table_prefix}_nodes (
       id $node_id_type PRIMARY KEY,
@@ -215,42 +264,43 @@ sub _write_config {
   my $self = shift;
   my $dbh = $self->dbh_rw;
 
-  local $dbh->{AutoCommit} = 0;
-  local $dbh->{RaisError} = 1;
-
   my $table_prefix = $self->table_prefix;
-  my $usth = $dbh->prepare(
-    qq#
-      UPDATE ${table_prefix}_options
-      SET id=?, value=?
-      WHERE id=?
-    #
-  );
-  my $isth = $dbh->prepare(
-    qq#
-      INSERT INTO ${table_prefix}_options
-      SET id=?, value=?
-    #
-  );
+
+  my $sql_struct = $self->_write_config_sql;
+  my $is_sub = ref($sql_struct) eq 'CODE';
+  my $sth;
+  $sth = $dbh->prepare($sql_struct->[0]) if not $is_sub;
 
   my $success = eval {
     foreach my $key (keys %{$self->{config}}) {
-      $isth->execute($key, $self->{config}{$key}); 1;
-      $usth->execute($key, $self->{config}{$key}, $key); 1;
+      if ($is_sub) {
+        $sql_struct->($key, $self->{config}{$key});
+      } else {
+        my $d = [$key, $self->{config}{$key}];
+        $sth->execute(map $d->[$_], @{$sql_struct}[1..$#$sql_struct]);
+        my $err = $sth->errstr; die $err if $err;
+      }
     }
-    $dbh->commit();
     1;
   };
-  if (not $success) {
-    $dbh->rollback();
-  }
 }
 
 sub fetch_node {
   my $self  = shift;
   my $index = shift;
-  my $nodes = $self->{nodes};
-  return($index > $#$nodes ? undef : $nodes->[$index]);
+  my $dbh = $self->dbh_ro;
+  my $str = $self->fetch_node_sql;
+  my $sth = $dbh->prepare_cached($str);
+  $sth->execute($index);
+  my $struct = $sth->fetchrow_arrayref;
+  return if not defined $struct;
+  my $coords = $self->no_of_coords;
+  my $node = Algorithm::SpatialIndex::Node->new(
+    id => $struct->[0],
+    coords => [@{$struct}[1..$coords]],
+    subnode_ids => [@{$struct}[1+$coords..$coords+$self->no_of_subnodes]],
+  );
+  return $node;
 }
 
 sub store_node {
@@ -268,14 +318,16 @@ sub store_node {
 
 sub get_option {
   my $self = shift;
-  return $self->_options->{shift()};
+  return $self->{config}->{shift()}; # We assume this data changes RARELY
 }
 
 sub set_option {
   my $self  = shift;
   my $key   = shift;
   my $value = shift;
-  $self->_options->{$key} = $value;
+
+  $self->{config}->{$key} = $value;
+  $self->_write_config(); # FIXME wasteful
 }
 
 sub store_bucket {
@@ -305,8 +357,8 @@ sub delete_bucket {
 
 Given an array ref containing coordinate type strings
 (cf. L<Algorithm::SpatialIndex::Strategy>),
-returns a string of column specifications for interpolation
-into a C<CREATE TABLE>.
+stores the SQL fragments for C<SELECT>
+and C<CREATE TABLE> for the node coordinates.
 
 The coordinates will be called C<c$i> where C<$i>
 starts at 0.
@@ -323,22 +375,28 @@ sub _coord_types_to_sql {
     integer  => 'INTEGER',
     unsigned => 'INTEGER UNSIGNED',
   );
-  my $sql = '';
+  my $create_sql = '';
+  my $select_sql = '';
   my $i = 0;
   foreach my $type (@$types) {
     my $sql_type = $types{lc($type)};
-    $sql .= "  c$i $sql_type,\n";
+    $create_sql .= "  c$i $sql_type,\n";
+    $select_sql .= "  c$i,\n";
     $i++;
   }
-  $sql =~ s/,(.*?)$/$1/;
-  return $sql;
+  $create_sql =~ s/,(.*?)$/$1/;
+  $select_sql =~ s/,(.*?)$/$1/;
+  $self->{node_coord_create_sql} = $create_sql;
+  $self->{node_coord_select_sql} = $select_sql;
 }
 
 =head2 _subnodes_sql
 
 Given the number of subnodes per node,
 creates a string of column specifications
-for interpolation into a C<CREATE TABLE>.
+for interpolation into a C<CREATE TABLE>
+and one for interpolation into a C<SELECT>.
+Saves those strings into the object.
 
 The columns are named C<sn$i> with C<$i>
 starting at 0.
@@ -348,15 +406,19 @@ starting at 0.
 sub _subnodes_sql {
   my $self = shift;
   my $no_subnodes = shift;
-  my $sql = '';
+  my $create_sql = '';
+  my $select_sql = '';
   my $i = 0;
   my $node_id_type = NODE_ID_TYPE;
   foreach my $i (0..$no_subnodes-1) {
-    $sql .= "  sn$i $node_id_type,\n";
+    $create_sql .= "  sn$i $node_id_type,\n";
+    $select_sql .= "  sn$i,\n";
     $i++;
   }
-  $sql =~ s/,(.*?)$/$1/;
-  return $sql;
+  $create_sql =~ s/,(.*?)$/$1/;
+  $select_sql =~ s/,(.*?)$/$1/;
+  $self->{subnodes_create_sql} = $create_sql;
+  $self->{subnodes_select_sql} = $select_sql;
 }
 
 1;
