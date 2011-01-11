@@ -300,6 +300,7 @@ sub fetch_node {
     coords => [@{$struct}[1..$coords]],
     subnode_ids => [@{$struct}[1+$coords..$coords+$self->no_of_subnodes]],
   );
+  $sth->finish;
   return $node;
 }
 
