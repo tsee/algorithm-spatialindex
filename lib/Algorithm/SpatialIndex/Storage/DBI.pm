@@ -114,7 +114,7 @@ sub init {
   $self->{dbh_rw} = $opt->{dbh_rw};
   $self->{dbh_ro} = $opt->{dbh_ro};
   $self->{table_prefix} = defined($opt->{table_prefix})
-                          ? $opt->{table_prefix} : 'spatialindex_';
+                          ? $opt->{table_prefix} : 'spatialindex';
   delete $self->{opt};
 
   my $config_existed = $self->_read_config_table;
