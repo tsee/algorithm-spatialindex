@@ -7,6 +7,7 @@ use Carp qw(croak);
 our $VERSION = '0.01';
 
 use parent 'Algorithm::SpatialIndex::Storage';
+use constant DEBUG => 1;
 
 =head1 NAME
 
@@ -121,7 +122,7 @@ sub init {
   $self->{subnodes_sql}   = $self->_subnodes_sql($self->no_of_subnodes);
 
   $self->_init_tables();
-  
+
   $self->_write_config() if not $config_existed;
 }
 
@@ -140,14 +141,13 @@ sub _read_config_table {
   my $table_prefix = $self->table_prefix;
 
   my $opt;
-  my $success = eval {
-    $opt = $dbh->selectall_hashref(
-      qq#
+  my $sql = qq#
         SELECT id, value
         FROM ${table_prefix}_options
-      #,
-      'id'
-    );
+      #;
+  warn $sql if DEBUG;
+  my $success = eval {
+    $opt = $dbh->selectall_hashref($sql, 'id');
     my $err = $dbh->errstr;
     die $err if $err;
     1;
@@ -181,27 +181,27 @@ sub _init_tables {
   my $dbh = $self->dbh_rw;
 
   my $table_prefix = $self->table_prefix;
-  $dbh->do(
-    qq#
-      CREATE TABLE IF NOT EXISTS ${table_prefix}_options (
-        id VARCHAR(255) PRIMARY KEY,
-        value VARCHAR(1023)
-      )
-    #
+  my $sql_opt = qq(
+    CREATE TABLE IF NOT EXISTS ${table_prefix}_options (
+      id VARCHAR(255) PRIMARY KEY,
+      value VARCHAR(1023)
+    )
   );
+  warn $sql_opt if DEBUG;
+  $dbh->do($sql_opt);
 
   my $node_id_type = NODE_ID_TYPE;
   my $coord_sql = $self->node_coord_sql;
   my $subnodes_sql = $self->subnodes_sql;
-  $dbh->do(
-    qq#
-      CREATE TABLE IF NOT EXISTS ${table_prefix}_nodes (
-        id $node_id_type PRIMARY KEY,
-        $coord_sql,
-        $subnodes_sql
-      )
-    #
+  my $sql =  qq(
+    CREATE TABLE IF NOT EXISTS ${table_prefix}_nodes (
+      id $node_id_type PRIMARY KEY,
+      $coord_sql,
+      $subnodes_sql
+    )
   );
+  warn $sql if DEBUG;
+  $dbh->do($sql);
 }
 
 =head2 _write_config
@@ -316,7 +316,7 @@ starts at 0.
 sub _coord_types_to_sql {
   my $self = shift;
   my $types = shift;
-  
+
   my %types = (
     float    => 'FLOAT',
     double   => 'DOUBLE',
@@ -327,7 +327,7 @@ sub _coord_types_to_sql {
   my $i = 0;
   foreach my $type (@$types) {
     my $sql_type = $types{lc($type)};
-    $sql .= "  c$i $sql,\n";
+    $sql .= "  c$i $sql_type,\n";
     $i++;
   }
   $sql =~ s/,(.*?)$/$1/;
@@ -356,6 +356,7 @@ sub _subnodes_sql {
     $i++;
   }
   $sql =~ s/,(.*?)$/$1/;
+  return $sql;
 }
 
 1;
