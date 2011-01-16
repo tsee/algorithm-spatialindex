@@ -14,7 +14,7 @@ use lib $tlibpath;
 if (not eval {require DBI; require DBD::SQLite; 1;}) {
   plan skip_all => 'These tests require DBI and DBD::SQLite';
 }
-plan tests => 12;
+plan tests => 22;
 
 my $dbfile = '21storage-dbi.test.sqlite';
 unlink $dbfile if -f $dbfile;
@@ -48,16 +48,48 @@ is_deeply($res, [['no_of_subnodes' => '5']], 'set_options writes to db');
 
 ok(!defined($storage->fetch_node(0)), 'No nodes to start with');
 ok(!defined($storage->fetch_node(1)), 'No nodes to start with');
+$storage->set_option('no_of_subnodes', 4);
 
 $storage->dbh_rw->do(
   qq#INSERT INTO ${prefix}_nodes VALUES (0, 1., 2., 3., 4., 9, NULL, NULL, NULL)#
 );
 
 my $n = $storage->fetch_node(0);
+
 isa_ok($n, 'Algorithm::SpatialIndex::Node');
 is($n->id, 0, 'node id okay (manual insertion)');
 is_deeply($n->coords, [1.,2.,3.,4.], 'node coords okay (manual insertion)');
 is_deeply($n->subnode_ids, [9, undef, undef, undef], 'subnode ids okay (manual insertion)');
+
+$n->subnode_ids->[1] = 15;
+
+$storage->store_node($n);
+
+$n = $storage->fetch_node(0);
+isa_ok($n, 'Algorithm::SpatialIndex::Node');
+is($n->id, 0, 'node id okay (manual insertion)');
+is_deeply($n->coords, [1.,2.,3.,4.], 'node coords okay (manual insertion)');
+is_deeply($n->subnode_ids, [9, 15, undef, undef], 'subnode ids okay (manual insertion)');
+
+# Test that we are able to get the same node from a separate index object
+SCOPE: {
+  my $i2 = Algorithm::SpatialIndex->new(
+    strategy => 'Test',
+    storage  => 'DBI',
+    dbh_rw   => $dbh,
+  );
+
+  isa_ok($i2, 'Algorithm::SpatialIndex');
+
+  my $s2 = $i2->storage;
+  isa_ok($s2, 'Algorithm::SpatialIndex::Storage::DBI');
+
+  my $n = $s2->fetch_node(0);
+  isa_ok($n, 'Algorithm::SpatialIndex::Node');
+  is($n->id, 0, 'node id okay (manual insertion)');
+  is_deeply($n->coords, [1.,2.,3.,4.], 'node coords okay (manual insertion)');
+  is_deeply($n->subnode_ids, [9, 15, undef, undef], 'subnode ids okay (manual insertion)');
+}
 
 =pod
 
