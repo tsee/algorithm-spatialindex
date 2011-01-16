@@ -14,7 +14,7 @@ use lib $tlibpath;
 if (not eval {require DBI; require DBD::SQLite; 1;}) {
   plan skip_all => 'These tests require DBI and DBD::SQLite';
 }
-plan tests => 22;
+plan tests => 24;
 
 my $dbfile = '21storage-dbi.test.sqlite';
 unlink $dbfile if -f $dbfile;
@@ -91,12 +91,14 @@ SCOPE: {
   is_deeply($n->subnode_ids, [9, 15, undef, undef], 'subnode ids okay (manual insertion)');
 }
 
-=pod
-
 my $node = Algorithm::SpatialIndex::Node->new;
+$node->coords([0..3]);
+$node->subnode_ids([undef, undef, undef, undef]);
 my $id = $storage->store_node($node);
 ok(defined($id), 'New id assigned');
 is($node->id, $id, 'New id inserted');
+
+=pod
 
 my $fetched = $storage->fetch_node($id);
 is_deeply($fetched, $node, 'Node retrievable');
