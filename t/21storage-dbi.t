@@ -14,7 +14,7 @@ use lib $tlibpath;
 if (not eval {require DBI; require DBD::SQLite; 1;}) {
   plan skip_all => 'These tests require DBI and DBD::SQLite';
 }
-plan tests => 24;
+plan tests => 25;
 
 my $dbfile = '21storage-dbi.test.sqlite';
 unlink $dbfile if -f $dbfile;
@@ -98,12 +98,6 @@ my $id = $storage->store_node($node);
 ok(defined($id), 'New id assigned');
 is($node->id, $id, 'New id inserted');
 
-=pod
-
 my $fetched = $storage->fetch_node($id);
 is_deeply($fetched, $node, 'Node retrievable');
-
-$storage->set_option('foo', 'bar');
-is($storage->get_option('foo'), 'bar', 'get/set option works');
-is($storage->get_option('foo2'), undef, 'get/set option works for nonexistent keys');
 
