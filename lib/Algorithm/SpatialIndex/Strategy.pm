@@ -20,6 +20,7 @@ sub new {
   my %opt = @_;
 
   my $self = bless {
+    bucket_size => 100,
     %opt,
   } => $class;
 
