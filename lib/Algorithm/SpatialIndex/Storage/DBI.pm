@@ -186,6 +186,8 @@ sub init {
                              . $self->node_coord_insert_sql . ', '
                              . $self->subnodes_insert_sql;
 
+  $self->_bucket_sql; # init sql for bucket operations
+
   $self->_init_tables();
   $self->_write_config() if not $config_existed;
 }
@@ -281,6 +283,10 @@ sub _init_tables {
   );
   warn $sql if DEBUG;
   $dbh->do($sql);
+
+  my $bsql = $self->{buckets_create_sql};
+  warn $bsql if DEBUG;
+  $dbh->do($bsql);
 }
 
 =head2 _write_config
@@ -326,10 +332,12 @@ sub fetch_node {
   my $struct = $sth->fetchrow_arrayref;
   return if not defined $struct;
   my $coords = $self->no_of_coords;
+  my $snodes = [@{$struct}[1+$coords..$coords+$self->no_of_subnodes]];
+  $snodes = [] if not defined $snodes->[0];
   my $node = Algorithm::SpatialIndex::Node->new(
     id => $struct->[0],
     coords => [@{$struct}[1..$coords]],
-    subnode_ids => [@{$struct}[1+$coords..$coords+$self->no_of_subnodes]],
+    subnode_ids => $snodes,
   );
   $sth->finish;
   return $node;
@@ -344,7 +352,15 @@ sub store_node {
   my $sth;
   if (not defined $id) {
     $sth = $dbh->prepare_cached($self->{_write_new_node_sql});
-    $sth->execute(@{$node->coords}, @{$node->subnode_ids});
+    my $coords = $node->coords;
+    my $snids = $node->subnode_ids;
+    my @args = (
+      @$coords,
+      ((undef) x ($self->no_of_coords - @$coords)),
+      @$snids,
+      ((undef) x ($self->no_of_subnodes - @$snids))
+    );
+    $sth->execute(@args);
     $id = $dbh->last_insert_id('', '', '', ''); # FIXME NOT PORTABLE LIKE THAT
     $node->id($id);
   }
@@ -394,18 +410,24 @@ sub fetch_bucket {
   my $node_id = shift;
   my $dbh = $self->dbh_ro;
   my $selsql = $self->{buckets_select_sql};
-  my $sth = $dbh->prepare_cached($selsql);
-  $sth->execute($node_id);
-  my $row = $sth->fetchrow_arrayref;
-  $sth->finish;
+# This throws SEGV in the driver
+  #my $sth = $dbh->prepare_cached($selsql);
+  #$sth->execute($node_id) or die $dbh->errstr;
+  #my $row = $sth->fetchrow_arrayref;
+  #$sth->finish;
+  my $rows = $dbh->selectall_arrayref($selsql, {}, $node_id);
+  my $row = $rows->[0];
   return undef if not defined $row;
-  shift @$row;
   my $items = [];
-  my $n = scalar(@{$self->item_coord_types});
-  while (@$row) {
-    push @$items, [splice(@$row, 0, $n)];
+  my $n = scalar(@{$self->item_coord_types}) + 1;
+  while (@$row > 1) {
+    my $item = [splice(@$row, 1, $n)];
+    next if not defined $item->[0];
+    push @$items, $item;
   }
   my $bucket = Algorithm::SpatialIndex::Bucket->new(id => $node_id, items => $items);
+  #use Data::Dumper;
+  #warn Dumper $bucket;
   return $bucket;
 }
 
@@ -508,7 +530,7 @@ sub _bucket_sql {
     integer  => 'INTEGER',
     unsigned => 'INTEGER UNSIGNED',
   );
-  my $item_coord_types = map $types{$_}, @{$self->item_coord_types};
+  my $item_coord_types = [map $types{$_}, @{$self->item_coord_types}];
 
   # i0 INTEGER, i0c0 DOUBLE, i0c1 DOUBLE, ...
   $self->{buckets_create_sql} = qq{CREATE TABLE IF NOT EXISTS $tname ( node_id INTEGER PRIMARY KEY, }
@@ -530,7 +552,7 @@ sub _bucket_sql {
       "i$i", map "i${i}c$_", 0..$#$item_coord_types
     } 0..$bsize-1
   );
-  my $nentries = 1 + $bsize * @$item_coord_types;
+  my $nentries = 1 + $bsize * (1+@$item_coord_types);
   #my $idlist = join(', ', map "i$_" 0..$bsize-1);
   my $qlist  = '?,' x $nentries;
   $qlist =~ s/,$//;
@@ -558,6 +580,8 @@ sub _bucket_sql {
       };
     };
   }
+  #use Data::Dumper;
+  #warn Dumper $self->{buckets_insert_sql};
 }
 
 1;
