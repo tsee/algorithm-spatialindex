@@ -128,7 +128,8 @@ Has to be implemented in a subclass.
 
 =head2 store_bucket
 
-Takes a node id and a bucket object and stores the bucket
+Takes a bucket object (with assigned node id)
+and stores the bucket
 as the bucket for this node id.
 
 Has to be implemented in a subclass.
