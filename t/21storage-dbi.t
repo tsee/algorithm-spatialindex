@@ -93,7 +93,7 @@ SCOPE: {
 
 my $node = Algorithm::SpatialIndex::Node->new;
 $node->coords([0..3]);
-$node->subnode_ids([undef, undef, undef, undef]);
+$node->subnode_ids([]);
 my $id = $storage->store_node($node);
 ok(defined($id), 'New id assigned');
 is($node->id, $id, 'New id inserted');
