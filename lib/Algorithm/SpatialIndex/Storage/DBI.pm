@@ -184,8 +184,8 @@ sub init {
                                  . qq{) VALUES($qlist)};
   $self->{_write_node_sql} = qq{UPDATE $node_table_name SET id=?, }
                              . $self->node_coord_insert_sql . ', '
-                             . $self->subnodes_insert_sql;
-
+                             . $self->subnodes_insert_sql
+                             . ' WHERE id=?';
   $self->_bucket_sql; # init sql for bucket operations
 
   $self->_init_tables();
@@ -340,12 +340,15 @@ sub fetch_node {
     subnode_ids => $snodes,
   );
   $sth->finish;
+  #use Data::Dumper; warn "FETCH: " . Dumper($node);
   return $node;
 }
 
 sub store_node {
   my $self = shift;
   my $node = shift;
+  #use Data::Dumper;
+  #use Data::Dumper; warn "STORE: " . Dumper($node);
   my $id = $node->id;
   my $dbh = $self->dbh_rw;
   my $tname = $self->table_prefix . '_nodes'; 
@@ -366,7 +369,7 @@ sub store_node {
   }
   else {
     $sth = $dbh->prepare_cached($self->{_write_node_sql});
-    $sth->execute($id, @{$node->coords}, @{$node->subnode_ids});
+    $sth->execute($id, @{$node->coords}, @{$node->subnode_ids}, $id);
   }
   $sth->finish();
   return $id;
