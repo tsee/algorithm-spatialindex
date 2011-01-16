@@ -337,6 +337,7 @@ sub fetch_node {
   my $sth = $dbh->prepare_cached($str);
   $sth->execute($index);
   my $struct = $sth->fetchrow_arrayref;
+  $sth->finish;
   return if not defined $struct;
   my $coords = $self->no_of_coords;
   my $snodes = [@{$struct}[1+$coords..$coords+$self->no_of_subnodes]];
@@ -346,7 +347,6 @@ sub fetch_node {
     coords => [@{$struct}[1..$coords]],
     subnode_ids => $snodes,
   );
-  $sth->finish;
   #use Data::Dumper; warn "FETCH: " . Dumper($node);
   return $node;
 }
