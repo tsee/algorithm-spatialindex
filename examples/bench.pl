@@ -5,8 +5,15 @@ use Algorithm::SpatialIndex;
 use Algorithm::QuadTree;
 use Benchmark qw(cmpthese);
 
+my $use_dbi = 0;
+if ($use_dbi) {
+  eval "use DBI; use DBD::SQLite;";
+  unlink 't.sqlite';
+  $use_dbi = DBI->connect("dbi:SQLite:dbname=t.sqlite", "", "");
+}
+
 my $bucks = 50;
-my $scale = 25;
+my $scale = 2;
 my $depth = 10;
 my @limits = qw(-10 -10 10 10);
 my @si_opt = (
@@ -18,6 +25,16 @@ my @si_opt = (
   limit_y_up  => $limits[3],
   bucket_size => $bucks,
 );
+my @si_opt_dbi = (
+  strategy => 'QuadTree',
+  storage  => 'DBI',
+  limit_x_low => $limits[0],
+  limit_y_low => $limits[1],
+  limit_x_up  => $limits[2],
+  limit_y_up  => $limits[3],
+  bucket_size => $bucks,
+  dbh_rw => $use_dbi,
+);
 my @qt_opt = (
   -xmin  => $limits[0],
   -ymin  => $limits[1],
@@ -26,11 +43,20 @@ my @qt_opt = (
   -depth => $depth,
 );
 
-=pod
+#=pod
 
 cmpthese(
   -2,
   {
+    ($use_dbi ? (si_insert_dbi => sub {
+      my $idx = Algorithm::SpatialIndex->new(@si_opt_dbi);
+      my $i = 0;
+      foreach my $x (map {$_/$scale} $limits[0]*$scale..$limits[2]*$scale) {
+        foreach my $y (map {$_/$scale} $limits[1]*$scale..$limits[3]*$scale) {
+          $idx->insert($i++, $x, $y);
+        }
+      }
+    }):()),
     si_insert => sub {
       my $idx = Algorithm::SpatialIndex->new(@si_opt);
       my $i = 0;
@@ -52,9 +78,10 @@ cmpthese(
   }
 );
 
-=cut
+#=cut
 
 my $idx = Algorithm::SpatialIndex->new(@si_opt);
+my $idx_dbi = Algorithm::SpatialIndex->new(@si_opt_dbi) if $use_dbi;
 my $qt = Algorithm::QuadTree->new(@qt_opt);
 my @list;
 SCOPE: {
@@ -62,6 +89,7 @@ SCOPE: {
   foreach my $x (map {$_/$scale} $limits[0]*$scale..$limits[2]*$scale) {
     foreach my $y (map {$_/$scale} $limits[1]*$scale..$limits[3]*$scale) {
       $idx->insert($i, $x, $y);
+      $idx_dbi->insert($i, $x, $y) if defined $idx_dbi;
       $qt->add($i, $x, $y, $x, $y);
       push @list, [$i, $x, $y];
       $i++;
@@ -76,6 +104,9 @@ my @rect_big   = (-5, -5, 7, 8);
 cmpthese(
   -2,
   {
+    ($use_dbi ? (si_poll_small_dbi => sub {
+      my @o = $idx_dbi->get_items_in_rect(@rect_small);
+    }) :()),
     si_poll_small => sub {
       my @o = $idx->get_items_in_rect(@rect_small);
     },
