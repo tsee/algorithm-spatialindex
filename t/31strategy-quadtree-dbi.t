@@ -14,7 +14,7 @@ use lib $tlibpath;
 if (not eval {require DBI; require DBD::SQLite; 1;}) {
   plan skip_all => 'These tests require DBI and DBD::SQLite';
 }
-plan tests => 63;
+plan tests => 64;
 
 my $dbfile = '31strategy-quadtree-dbi.test.sqlite';
 unlink $dbfile if -f $dbfile;
@@ -29,4 +29,3 @@ END {
 use Algorithm::SpatialIndex::QTreeTest;
 Algorithm::SpatialIndex::QTreeTest->run('DBI', dbh_rw => $dbh);
 
-diag("End reached");

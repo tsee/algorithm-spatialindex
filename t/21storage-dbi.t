@@ -14,7 +14,7 @@ use lib $tlibpath;
 if (not eval {require DBI; require DBD::SQLite; 1;}) {
   plan skip_all => 'These tests require DBI and DBD::SQLite';
 }
-plan tests => 25;
+plan tests => 26;
 
 my $dbfile = '21storage-dbi.test.sqlite';
 unlink $dbfile if -f $dbfile;
@@ -100,4 +100,16 @@ is($node->id, $id, 'New id inserted');
 
 my $fetched = $storage->fetch_node($id);
 is_deeply($fetched, $node, 'Node retrievable');
+
+my $bucket = Algorithm::SpatialIndex::Bucket->new(
+  node_id => 13,
+  items => [
+    [1,2,3],
+    [2,3,4],
+    [4,5,6],
+    [1,2,3],
+  ],
+);
+$storage->store_bucket($bucket);
+is_deeply($storage->fetch_bucket(13), $bucket, 'bucket can be fetched');
 
