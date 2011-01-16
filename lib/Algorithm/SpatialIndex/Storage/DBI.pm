@@ -36,6 +36,7 @@ This storage backend is persistent.
 
 
 use constant NODE_ID_TYPE => 'INTEGER';
+use constant ITEM_ID_TYPE => 'INTEGER';
 
 use Class::XSAccessor {
   getters => [qw(
@@ -53,6 +54,9 @@ use Class::XSAccessor {
     subnodes_select_sql
     subnodes_insert_sql
 
+    bucket_size
+    item_coord_types
+
     config
 
     dbms_name
@@ -69,6 +73,10 @@ Returns the prefix of the table names.
 =head2 coord_types
 
 Returns an array reference containing the coordinate type strings.
+
+=head2 item_coord_types
+
+Returns an array reference containing the item coordinate type strings.
 
 =head2 node_coord_create_sql
 
@@ -168,9 +176,12 @@ sub init {
   $self->_coord_types_to_sql($self->coord_types);
   $self->_subnodes_sql($self->no_of_subnodes);
   $self->{_fetch_node_sql} = qq(SELECT id, $self->{node_coord_select_sql}, $self->{subnodes_select_sql} FROM ${table_prefix}_nodes WHERE id=?);
-  $self->{_write_new_node_sql} = qq{INSERT INTO $node_table_name SET }
-                                 . $self->node_coord_insert_sql . ', '
-                                 . $self->subnodes_insert_sql;
+  my $qlist = '?,' x ($self->no_of_subnodes + @{$self->coord_types});
+  $qlist =~ s/,$//;
+  $self->{_write_new_node_sql} = qq{INSERT INTO $node_table_name (}
+                                 . $self->node_coord_select_sql . ', '
+                                 . $self->subnodes_select_sql
+                                 . qq{) VALUES($qlist)};
   $self->{_write_node_sql} = qq{UPDATE $node_table_name SET id=?, }
                              . $self->node_coord_insert_sql . ', '
                              . $self->subnodes_insert_sql;
@@ -220,8 +231,19 @@ sub _read_config_table {
     $opt->{coord_types} = join ' ', @{$self->{coord_types}};
   }
 
+  if (defined $opt->{item_coord_types}) {
+    $self->{item_coord_types} = [split / /, $opt->{item_coord_types}];
+  }
+  else {
+    $self->{item_coord_types} = [$self->index->strategy->item_coord_types];
+    $opt->{item_coord_types} = join ' ', @{$self->{item_coord_types}};
+  }
+
   $opt->{no_of_subnodes} ||= $self->index->strategy->no_of_subnodes;
   $self->{no_of_subnodes} = $opt->{no_of_subnodes};
+
+  $opt->{bucket_size} ||= $self->index->strategy->bucket_size;
+  $self->{bucket_size} = $opt->{bucket_size};
 
   return $success;
 }
@@ -241,7 +263,7 @@ sub _init_tables {
   my $sql_opt = qq(
     CREATE TABLE IF NOT EXISTS ${table_prefix}_options (
       id VARCHAR(255) PRIMARY KEY,
-      value VARCHAR(1023) NOT NULL
+      value VARCHAR(1023)
     )
   );
   warn $sql_opt if DEBUG;
@@ -323,6 +345,8 @@ sub store_node {
   if (not defined $id) {
     $sth = $dbh->prepare_cached($self->{_write_new_node_sql});
     $sth->execute(@{$node->coords}, @{$node->subnode_ids});
+    $id = $dbh->last_insert_id('', '', '', ''); # FIXME NOT PORTABLE LIKE THAT
+    $node->id($id);
   }
   else {
     $sth = $dbh->prepare_cached($self->{_write_node_sql});
@@ -349,13 +373,40 @@ sub set_option {
 sub store_bucket {
   my $self   = shift;
   my $bucket = shift;
-  $self->{buckets}->[$bucket->node_id] = $bucket;
+  my $dbh = $self->dbh_rw;
+  my $id = $bucket->node_id;
+  my $sql = $self->{buckets_insert_sql};
+  my $is_sub = ref($sql) eq 'CODE';
+  if (!$is_sub) {
+    my $sth = $dbh->prepare_cached($sql->[0]);
+    my $d = [$id, map {@$_} @{$bucket->items}];
+    $sth->execute(map $d->[$_], @{$sql}[1..$#$sql]);
+    my $err = $sth->errstr; die $err if $err;
+    $sth->finish;
+  }
+  else {
+    $sql->($id, map {@$_} @{$bucket->items});
+  }
 }
 
 sub fetch_bucket {
   my $self    = shift;
   my $node_id = shift;
-  return $self->{buckets}->[$node_id];
+  my $dbh = $self->dbh_ro;
+  my $selsql = $self->{buckets_select_sql};
+  my $sth = $dbh->prepare_cached($selsql);
+  $sth->execute($node_id);
+  my $row = $sth->fetchrow_arrayref;
+  $sth->finish;
+  return undef if not defined $row;
+  shift @$row;
+  my $items = [];
+  my $n = scalar(@{$self->item_coord_types});
+  while (@$row) {
+    push @$items, [splice(@$row, 0, $n)];
+  }
+  my $bucket = Algorithm::SpatialIndex::Bucket->new(id => $node_id, items => $items);
+  return $bucket;
 }
 
 sub delete_bucket {
@@ -398,14 +449,14 @@ sub _coord_types_to_sql {
   foreach my $type (@$types) {
     my $sql_type = $types{lc($type)};
     die "Invalid coord type '$type'" if not defined $sql_type;
-    $create_sql .= "  c$i $sql_type,\n";
-    $select_sql .= "  c$i,\n";
+    $create_sql .= "  c$i $sql_type, ";
+    $select_sql .= "  c$i, ";
     $insert_sql .= " c$i=?, ";
     $i++;
   }
-  $create_sql =~ s/,(.*?)$/$1/;
-  $select_sql =~ s/,(.*?)$/$1/;
-  $insert_sql =~ s/, $//;
+  $create_sql =~ s/, \z//;
+  $select_sql =~ s/, \z//;
+  $insert_sql =~ s/, \z//;
   $self->{node_coord_create_sql} = $create_sql;
   $self->{node_coord_select_sql} = $select_sql;
   $self->{node_coord_insert_sql} = $insert_sql;
@@ -433,17 +484,80 @@ sub _subnodes_sql {
   my $i = 0;
   my $node_id_type = NODE_ID_TYPE;
   foreach my $i (0..$no_subnodes-1) {
-    $create_sql .= "  sn$i $node_id_type,\n";
-    $select_sql .= "  sn$i,\n";
+    $create_sql .= "  sn$i $node_id_type, ";
+    $select_sql .= "  sn$i, ";
     $insert_sql .= " sn$i=?, ";
     $i++;
   }
-  $create_sql =~ s/,(.*?)$/$1/;
-  $select_sql =~ s/,(.*?)$/$1/;
-  $insert_sql =~ s/, $//;
+  $create_sql =~ s/, \z//;
+  $select_sql =~ s/, \z//;
+  $insert_sql =~ s/, \z//;
   $self->{subnodes_create_sql} = $create_sql;
   $self->{subnodes_select_sql} = $select_sql;
   $self->{subnodes_insert_sql} = $insert_sql;
+}
+
+sub _bucket_sql {
+  my $self = shift;
+  my $bsize = $self->bucket_size;
+  my $tname = $self->table_prefix . '_buckets';
+
+  my %types = (
+    float    => 'FLOAT',
+    double   => 'DOUBLE',
+    integer  => 'INTEGER',
+    unsigned => 'INTEGER UNSIGNED',
+  );
+  my $item_coord_types = map $types{$_}, @{$self->item_coord_types};
+
+  # i0 INTEGER, i0c0 DOUBLE, i0c1 DOUBLE, ...
+  $self->{buckets_create_sql} = qq{CREATE TABLE IF NOT EXISTS $tname ( node_id INTEGER PRIMARY KEY, }
+                                . join(
+                                  ', ',
+                                  map {
+                                    my $i = $_;
+                                    my $c = 0;
+                                    ("i$i INTEGER", map "i${i}c".$c++." $_", @$item_coord_types)
+                                  } 0..$bsize-1
+                                )
+                                . ')';
+  $self->{buckets_select_sql} = qq{SELECT * FROM $tname WHERE node_id=?};
+
+  my $insert_id_list = join(
+    ', ',
+    map {
+      my $i = $_;
+      "i$i", map "i${i}c$_", 0..$#$item_coord_types
+    } 0..$bsize-1
+  );
+  my $nentries = 1 + $bsize * @$item_coord_types;
+  #my $idlist = join(', ', map "i$_" 0..$bsize-1);
+  my $qlist  = '?,' x $nentries;
+  $qlist =~ s/,$//;
+  if ($self->is_mysql) {
+    $self->{buckets_insert_sql} = [
+      qq{
+        INSERT INTO $tname
+        VALUES ($qlist)
+        ON DUPLICATE KEY UPDATE $insert_id_list
+      }, 0..$nentries-1
+    ];
+  }
+  elsif ($self->is_sqlite) {
+    $self->{buckets_insert_sql} = [qq{INSERT OR REPLACE INTO $tname VALUES($qlist)}, 0..$nentries-1 ];
+  }
+  else {
+    my $insert_sql = qq{INSERT INTO $tname VALUES(?, $qlist)};
+    my $update_sql = qq{UPDATE $tname SET id=?, $insert_id_list};
+    $self->{buckets_insert_sql} = sub {
+      my $dbh = shift;
+      eval {
+        $dbh->do($insert_sql, {}, @_, (undef) x ($nentries-@_));
+        $dbh->do($update_sql, {}, @_, (undef) x ($nentries-@_));
+        1;
+      };
+    };
+  }
 }
 
 1;
