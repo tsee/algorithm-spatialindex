@@ -425,9 +425,7 @@ sub fetch_bucket {
     next if not defined $item->[0];
     push @$items, $item;
   }
-  my $bucket = Algorithm::SpatialIndex::Bucket->new(id => $node_id, items => $items);
-  use Data::Dumper;
-  warn Dumper $bucket;
+  my $bucket = Algorithm::SpatialIndex::Bucket->new(node_id => $node_id, items => $items);
   return $bucket;
 }
 
