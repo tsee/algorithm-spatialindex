@@ -172,6 +172,7 @@ sub _split_node {
   foreach my $cnode (@child_nodes) {
     push @{$snode_ids}, $storage->store_node($cnode);
   }
+  $storage->store_node($parent_node);
 
   # split bucket
   my $items = $bucket->items;
