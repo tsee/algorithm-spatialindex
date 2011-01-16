@@ -426,8 +426,8 @@ sub fetch_bucket {
     push @$items, $item;
   }
   my $bucket = Algorithm::SpatialIndex::Bucket->new(id => $node_id, items => $items);
-  #use Data::Dumper;
-  #warn Dumper $bucket;
+  use Data::Dumper;
+  warn Dumper $bucket;
   return $bucket;
 }
 
@@ -435,9 +435,8 @@ sub delete_bucket {
   my $self    = shift;
   my $node_id = shift;
   $node_id = $node_id->node_id if ref($node_id);
-  my $buckets = $self->{buckets};
-  $buckets->[$node_id] = undef;
-  pop(@$buckets) while @$buckets and not defined $buckets->[-1];
+  my $tname = $self->table_prefix . '_buckets';
+  $self->dbh_rw->do(qq{DELETE FROM $tname WHERE node_id=?}, {}, $node_id);
   return();
 }
 
