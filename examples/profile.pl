@@ -5,16 +5,25 @@ use Algorithm::SpatialIndex;
 
 my $what = lc(shift(@ARGV)||'poll');
 my $bucks = 50;
-my $scale = 25;
+my $scale = 2;
 my @limits = qw(-10 -10 10 10);
+
+my $use_dbi = 1;
+if ($use_dbi) {
+  eval "use DBI; use DBD::SQLite;";
+  unlink 't.sqlite';
+  $use_dbi = DBI->connect("dbi:SQLite:dbname=t.sqlite", "", "");
+}
+
 my @si_opt = (
   strategy => 'QuadTree',
-  storage  => 'Memory',
+  storage  => $use_dbi ? 'DBI' : 'Memory',
   limit_x_low => $limits[0],
   limit_y_low => $limits[1],
   limit_x_up  => $limits[2],
   limit_y_up  => $limits[3],
   bucket_size => $bucks,
+  dbh_rw => $use_dbi,
 );
 
 my $idx;
