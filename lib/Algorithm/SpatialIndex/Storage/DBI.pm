@@ -26,6 +26,13 @@ Algorithm::SpatialIndex::Storage::DBI - DBI storage backend
 
 =head1 DESCRIPTION
 
+B<WARNING: WHILE IT SEEMS TO WORK FOR ME, THIS STORAGE BACKEND IS HIGHLY
+EXPERIMENTAL AND IN A PROOF-OF-CONCEPT STATE.> Unsurprisingly, it is also
+20x slower when using SQLite as the storage engine then when using the
+memory storage backend. Has only been tested with SQLite but has
+mysql-specific and SQLite specific code paths as well as a general
+SQL code path which is less careful about race conditions.
+
 Inherits from L<Algorithm::SpatialIndex::Storage>.
 
 This storage backend is persistent.
