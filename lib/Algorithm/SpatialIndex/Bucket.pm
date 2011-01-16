@@ -46,7 +46,8 @@ initialized) of items in this bucket.
 An item is defined to be an unblessed array references
 containing the item id followed by the item coordinates.
 The type and number of coordinates may depend on the
-chosen index C<Strategy>.
+chosen index C<Strategy>. Cf. the strategy's
+C<item_coord_types> method.
 
 =head1 AUTHOR
 
