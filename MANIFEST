@@ -5,6 +5,7 @@ lib/Algorithm/SpatialIndex.pm
 lib/Algorithm/SpatialIndex/Bucket.pm
 lib/Algorithm/SpatialIndex/Node.pm
 lib/Algorithm/SpatialIndex/Storage.pm
+lib/Algorithm/SpatialIndex/Storage/DBI.pm
 lib/Algorithm/SpatialIndex/Storage/Memory.pm
 lib/Algorithm/SpatialIndex/Strategy.pm
 lib/Algorithm/SpatialIndex/Strategy/QuadTree.pm
@@ -14,5 +15,8 @@ README
 t/01load.t
 t/02pluggable.t
 t/20storage-memory.t
+t/21storage-dbi.t
 t/30strategy-quadtree.t
+t/31strategy-quadtree-dbi.t
+t/lib/Algorithm/SpatialIndex/QTreeTest.pm
 t/lib/Algorithm/SpatialIndex/Strategy/Test.pm
