@@ -1,4 +1,7 @@
 Revision history for Perl extension Algorithm::SpatialIndex
 
+0.02   Wed Jan 10 20:00:00 CEST 2011
+  - First release with experimental DBI backend.
+
 0.01   Sat Jan  8 20:00:00 CEST 2011
   - First release.
