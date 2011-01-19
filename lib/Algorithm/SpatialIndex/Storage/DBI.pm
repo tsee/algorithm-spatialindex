@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp qw(croak);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use parent 'Algorithm::SpatialIndex::Storage';
 use constant DEBUG => 0;
@@ -36,6 +36,9 @@ SQL code path which is less careful about race conditions.
 Inherits from L<Algorithm::SpatialIndex::Storage>.
 
 This storage backend is persistent.
+
+No implementation of schema migration yet, so expect to have to
+reinitialize the index after a module upgrade!
 
 =head1 ACCESSORS
 
