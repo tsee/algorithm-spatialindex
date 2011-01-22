@@ -31,7 +31,7 @@ sub run {
 
   # this is unit testing:
   SCOPE: {
-    my ($x, $y) = $strategy->_node_center_coords(2, -3, 5, 4);
+    my ($x, $y) = $strategy->_node_split_coords(undef, undef, [2, -3, 5, 4]);
     my $eps = 1.e-6;
     cmp_ok($x, '<=', 3.5+$eps);
     cmp_ok($x, '>=', 3.5-$eps);

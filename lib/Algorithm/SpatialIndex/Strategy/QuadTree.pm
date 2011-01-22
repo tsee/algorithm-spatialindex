@@ -149,9 +149,10 @@ SCOPE: {
   }
 } # end SCOPE
 
-sub _node_center_coords {
-  # args: $self, $xlow, $ylow, $xup, $yup
-  return( ($_[1]+$_[3])/2, ($_[2]+$_[4])/2 );
+sub _node_split_coords {
+  # args: $self, $node, $bucket, $coords
+  my $c = $_[3];
+  return( ($c->[0]+$c->[2])/2, ($c->[1]+$c->[3])/2 );
 }
 
 
@@ -167,7 +168,7 @@ sub _split_node {
   $bucket = $storage->fetch_bucket($parent_node_id) if not defined $bucket;
 
   my $coords = $parent_node->coords;
-  my ($centerx, $centery) = $self->_node_center_coords(@$coords);
+  my ($centerx, $centery) = $self->_node_split_coords($parent_node, $bucket, $coords);
   @$coords[XSPLIT, YSPLIT] = ($centerx, $centery); # stored below
   my @child_nodes;
 
