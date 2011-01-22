@@ -64,7 +64,7 @@ sub _init_strategy {
   my $strategy = $opt->{strategy};
 
   croak("Need strategy") if not defined $strategy;
-  my @strategies = grep /\Q$strategy\E$/, $self->strategies;
+  my @strategies = grep /\b\Q$strategy\E$/, $self->strategies;
   if (@strategies == 0) {
     croak("Could not find specified strategy '$strategy'. Available strategies: " . join(', ', @strategies));
   }
@@ -81,7 +81,7 @@ sub _init_storage {
   my $storage = $opt->{storage};
 
   croak("Need storage") if not defined $storage;
-  my @storage_backends = grep /\Q$storage\E$/, $self->storage_backends;
+  my @storage_backends = grep /\b\Q$storage\E$/, $self->storage_backends;
   if (@storage_backends == 0) {
     croak("Could not find specified storage backends '$storage'");
   }
