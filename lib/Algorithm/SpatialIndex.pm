@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp qw(croak);
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Module::Pluggable (
   sub_name    => 'strategies',
@@ -194,6 +194,8 @@ Returns a list of array references each of which
 contains the id and coordinates of a single item.
 
 =head1 SEE ALSO
+
+L<Algorithm::SpatialIndex::Strategy::MedianQuadTree>
 
 L<Algorithm::QuadTree>
 

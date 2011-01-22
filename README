@@ -66,6 +66,8 @@ DESCRIPTION
     coordinates of a single item.
 
 SEE ALSO
+    Algorithm::SpatialIndex::Strategy::MedianQuadTree
+
     Algorithm::QuadTree
 
     Tree::M
