@@ -26,7 +26,7 @@ sub run {
   isa_ok($strategy, 'Algorithm::SpatialIndex::Strategy::QuadTree');
 
   is($strategy->no_of_subnodes, 4, 'QuadTree has four subnodes');
-  is_deeply([$strategy->coord_types], [qw(double double double double)], 'QuadTree has four subnodes');
+  is_deeply([$strategy->coord_types], [qw(double double double double double double)], 'QuadTree has six coordinates');
 
 
   # this is unit testing:
