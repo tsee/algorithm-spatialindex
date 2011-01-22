@@ -1,5 +1,12 @@
 Revision history for Perl extension Algorithm::SpatialIndex
 
+0.03   Sat Jan 22 20:00:00 CEST 2011
+  - Quad tree with six coordinates instead of four.
+  - Updated example benchmark.
+  - Fix for the storage and strategy plugin detection.
+  - Refactoring for Algorithm::SpatialIndex::Strategy::MedianQuadTree
+    compatibility.
+
 0.02   Wed Jan 10 20:00:00 CEST 2011
   - First release with experimental DBI backend.
 
