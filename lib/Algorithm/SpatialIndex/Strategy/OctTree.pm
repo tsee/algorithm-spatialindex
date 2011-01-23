@@ -130,7 +130,7 @@ SCOPE: {
         my $items = $bucket->items;
         if (@$items < $self->{bucket_size}) {
           # sufficient space in bucket. Insert and return
-          push @{$items}, [$id, $x, $y];
+          push @{$items}, [$id, $x, $y, $z];
           $storage->store_bucket($bucket);
           return();
         }
@@ -258,7 +258,7 @@ sub _split_node {
   # PPM_NODE
   push @child_nodes, Algorithm::SpatialIndex::Node->new(
     coords      => [$splitx, $splity, $coords->[ZLOW],
-                    $coords->[XLOW], $coords->[YUP], $splitz,
+                    $coords->[XUP], $coords->[YUP], $splitz,
                     undef, undef, undef],
     subnode_ids => [],
   );
