@@ -43,6 +43,8 @@ sub _set_storage {
   Scalar::Util::weaken($self->{storage});
 }
 
+sub no_of_dimensions { 2 }
+
 sub no_of_subnodes { 4 }
 
 sub coord_types { qw(double double double double) }
@@ -77,18 +79,24 @@ Algorithm::SpatialIndex::Strategy - Base class for indexing strategies
 
 =head1 DESCRIPTION
 
+This is the base class for all algorithm implementations (I<Strategies>)
+in C<Algorithm::SpatialIndex>. Your implementation should probably not
+inherit from this class directly, but from either L<Algorithm::SpatialIndex::Strategy::2D>
+or L<Algorithm::SpatialIndex::Strategy::3D> depending on the dimensionality of
+your index.
+
 =head1 METHODS
 
 =head2 insert
 
 Inserts a new element into the index. Arguments:
-Element (not node!) integer id, Element x/y coordinates.
+Element (not node!) integer id, Element x/y (and possibly z) coordinates.
 
 Needs to be implemented in a subclass.
 
 =head2 find_node_for
 
-Given a pair of x/y coordinates, returns
+Given x/y (or x/y/z) coordinates, returns
 the L<Algorithm::SpatialIndex::Node>
 that contains the given point.
 
@@ -98,7 +106,7 @@ Needs to be implemented in a subclass.
 
 =head2 find_nodes_for
 
-Given two pairs of x/y coordinates, returns
+Given two sets of x/y (or x/y/z) coordinates, returns
 all L<Algorithm::SpatialIndex::Node>s that are completely
 or partly within the rectangle defined by the two points.
 
@@ -120,13 +128,18 @@ fresh object in the constructor.
 If your subcass implements this, it will be called on the
 in the constructor after initializing its storage attribute.
 
+=head2 no_of_dimensions
+
+A method returning the number of dimensions that the index handles.
+
+This is set to a default in the 2D/3D subclasses.
+
 =head2 no_of_subnodes
 
 Returns the number of subnodes per node. Required by the storage
 initialization.
 
-The default implementation returns 4 (for a quad tree).
-You may want to override that in your subclass.
+This is set to a default in the 2D/3D subclasses.
 
 =head2 coord_types
 
@@ -153,16 +166,15 @@ Valid coordinate types are:
 
 The integer types will be treated as C longs (likely 32bit).
 
-The default implementation returns
-C<qw(double double double double)> for storing two x/y
-coordinate pairs.
+This is set to a default in the 2D/3D subclasses.
 You may want to override that in your subclass.
 
 =head2 item_coord_types
 
 Same as coord_types, but indicating what's required for each
-item stored in the tree. Defaults to one X/Y coordinate pair
-of doubles.
+item stored in the tree.
+
+This is set to a default in the 2D/3D subclasses.
 
 =head1 AUTHOR
 

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp qw(croak);
 
-use parent 'Algorithm::SpatialIndex::Strategy';
+use parent 'Algorithm::SpatialIndex::Strategy::2D';
 
 # Note that the subnode indexes are as follows:
 # (like quadrants in planar geometry)

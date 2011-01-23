@@ -33,6 +33,8 @@ use Class::XSAccessor {
     limit_x_up
     limit_y_low
     limit_y_up
+    limit_z_low
+    limit_z_up
     bucket_size
   )],
 };
@@ -46,6 +48,8 @@ sub new {
     limit_x_up  => 100,
     limit_y_low => -100,
     limit_y_up  => 100,
+    limit_z_low => -100,
+    limit_z_up  => 100,
     bucket_size => 100,
     %opt,
   } => $class;
@@ -136,12 +140,15 @@ Algorithm::SpatialIndex - Flexible 2D spacial indexing
 
 =head1 DESCRIPTION
 
-A generic implementation of spatial (2D) indexes with support for
+A generic implementation of spatial (2D and 3D) indexes with support for
 pluggable algorithms (henceforth: I<strategies>) and storage backends.
 
 Right now, this package ships with a quad tree implementation
-(L<Algorithm::SpatialIndex::Strategy::QuadTree>) and an in-memory
-storage backend (L<Algorithm::SpatialIndex::Storage::Memory>).
+(L<Algorithm::SpatialIndex::Strategy::QuadTree>), an experimental
+oct tree (3D indexing, L<Algorithm::SpatialIndex::Strategy::OctTree>),
+an in-memory storage backend (L<Algorithm::SpatialIndex::Storage::Memory>),
+and an experimental database-backed storage
+(L<Algorithm::SpatialIndex::Storage::DBI>),
 
 B<NOTE: This is an experimental release. There must be bugs.>
 
@@ -167,10 +174,13 @@ The following parameters are optional:
 
 =over 2
 
-=item limit_x_low limit_x_up limit_y_low limit_y_up
+=item limit_x_low limit_x_up limit_y_low limit_y_up limit_z_low limit_z_up
 
 The upper/lower limits of the x/y dimensions of the index. Defaults to
 C<[-100, 100]> for both dimensions.
+
+If the chosen strategy is suitable for 3D indexing, C<limit_z_low>
+and C<limit_z_up> do the obvious.
 
 =item bucket_size
 
@@ -185,13 +195,25 @@ C<bucket_size> defaults to 100.
 Insert a new item into the index. Takes the unique
 item id, an x-, and a y coordinate as arguments.
 
+For three-dimensional spatial indexes such as an oct tree,
+you must pass three coordinates.
+
 =head2 get_items_in_rect
 
-Given the coordinates of two points that define a rectangle,
-this method finds all items within that rectangle.
+Given the coordinates of two points that define a rectangle
+(or a cuboid in 3D),
+this method finds all items within that rectangle (or cuboid).
 
 Returns a list of array references each of which
 contains the id and coordinates of a single item.
+
+Usage for 2D:
+
+  $idx->get_items_in_rect($x1, $y1, $x2, $y2);
+
+Usage for 3D:
+
+  $idx->get_items_in_rect($x1, $y1, $z1, $x2, $y2, $z2);
 
 =head1 SEE ALSO
 
