@@ -45,14 +45,10 @@ sub run {
     is($top_node->id, $strategy->top_node_id, 'Top node has top_node_id...');
     my $xy = $top_node->coords;
 
-    cmp_ok($xy->[0], '<=', $limits[0]+$eps);
-    cmp_ok($xy->[0], '>=', $limits[0]-$eps);
-    cmp_ok($xy->[1], '<=', $limits[1]+$eps);
-    cmp_ok($xy->[1], '>=', $limits[1]-$eps);
-    cmp_ok($xy->[2], '<=', $limits[2]+$eps);
-    cmp_ok($xy->[2], '>=', $limits[2]-$eps);
-    cmp_ok($xy->[3], '<=', $limits[3]+$eps);
-    cmp_ok($xy->[3], '>=', $limits[3]-$eps);
+    for (0..3) {
+      cmp_ok($xy->[$_], '<=', $limits[$_]+$eps);
+      cmp_ok($xy->[$_], '>=', $limits[$_]-$eps);
+    }
   }
 
 
