@@ -272,7 +272,7 @@ sub _split_node {
 
   # split bucket
   my $items = $bucket->items;
-  my @child_items = ( ([]) x @child_nodes );
+  my @child_items = ( map [], @child_nodes );
   foreach my $item (@$items) {
     if ($item->[XI] <= $splitx) {
       if ($item->[YI] <= $splity) {
