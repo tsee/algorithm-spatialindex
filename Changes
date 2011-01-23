@@ -1,5 +1,14 @@
 Revision history for Perl extension Algorithm::SpatialIndex
 
+0.04   Sun Jan 23 14:00:00 CEST 2011
+  - Refactoring of the Strategy interface and public interface to
+    allow for 3D indexes.
+  - Introduction of the Algorithm::SpatialIndex::Strategy::2D
+    and Algorithm::SpatialIndex::Strategy::3D base classes for
+    2D/3D indexes.
+  - Introduction of the first implementation of an oct tree
+    as Algorithm::SpatialIndex::Strategy::OctTree.
+
 0.03   Sat Jan 22 20:00:00 CEST 2011
   - Quad tree with six coordinates instead of four.
   - Updated example benchmark.
