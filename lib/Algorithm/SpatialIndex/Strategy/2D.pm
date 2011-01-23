@@ -10,6 +10,15 @@ sub no_of_subnodes { 4 }
 sub coord_types { qw(double double double double) }
 sub item_coord_types { qw(double double) }
 
+sub filter_items_in_rect {
+  my ($self, $xl, $yl, $xu, $yu, @nodes) = @_;
+  my $storage = $self->storage;
+  return grep $_->[1] >= $xl && $_->[1] <= $xu &&
+              $_->[2] >= $yl && $_->[2] <= $yu,
+         map { @{ $storage->fetch_bucket($_->id)->items } }
+         @nodes
+}
+
 1;
 __END__
 
@@ -51,6 +60,12 @@ C<coord_types> defaults to four doubles.
 =back
 
 =head1 METHODS
+
+=head2 filter_items_in_rect
+
+This L<Algorithm::SpatialIndex::Strategy> subclass implements
+a generic C<filter_items_in_rect> method that assumes only
+two dimensions and that items have two coordinates (x, y).
 
 =head1 AUTHOR
 

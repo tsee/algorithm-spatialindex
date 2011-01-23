@@ -103,12 +103,8 @@ sub insert {
 
 sub get_items_in_rect {
   my ($self, @rect) = @_;
-  my $storage = $self->storage;
-  return grep $_->[1] >= $rect[0] && $_->[1] <= $rect[2] &&
-              $_->[2] >= $rect[1] && $_->[2] <= $rect[3],
-         map {@{$_->items}}
-         map $storage->fetch_bucket($_->id),
-         $self->strategy->find_nodes_for(@rect);
+  my $strategy = $self->strategy;
+  return $strategy->filter_items_in_rect(@rect, $strategy->find_nodes_for(@rect));
 }
 
 1;
@@ -116,7 +112,7 @@ __END__
 
 =head1 NAME
 
-Algorithm::SpatialIndex - Flexible 2D spacial indexing
+Algorithm::SpatialIndex - Flexible 2D/3D spacial indexing
 
 =head1 SYNOPSIS
 

@@ -1,7 +1,7 @@
 package Algorithm::SpatialIndex::Strategy::Test;
 use strict;
 use warnings;
-use parent 'Algorithm::SpatialIndex::Strategy';
+use parent 'Algorithm::SpatialIndex::Strategy::2D';
 
 our $InitStorageCalled;
 our $InitCalled;
