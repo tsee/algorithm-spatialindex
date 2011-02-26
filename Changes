@@ -1,5 +1,11 @@
 Revision history for Perl extension Algorithm::SpatialIndex
 
+0.05   Sat Feb 26 14:15:00 CEST 2011
+  - Introduced a default maximum depth of the trees of 20 levels.
+    This takes precedence over limited bucket size and thus fixes
+    an issue with too many items being very close to one another
+    continuously overflowing buckets. [Marten Cieluch]
+
 0.04   Sun Jan 23 14:00:00 CEST 2011
   - Refactoring of the Strategy interface and public interface to
     allow for 3D indexes.
