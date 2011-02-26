@@ -23,6 +23,7 @@ t/30strategy-quadtree.t
 t/31strategy-quadtree-dbi.t
 t/40strategy-octtree.t
 t/41strategy-octtree-dbi.t
+t/60max_depth.t
 t/lib/Algorithm/SpatialIndex/OTreeTest.pm
 t/lib/Algorithm/SpatialIndex/QTreeTest.pm
 t/lib/Algorithm/SpatialIndex/Strategy/Test.pm
