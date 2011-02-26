@@ -56,6 +56,8 @@ use Class::XSAccessor {
   getters => [qw(
     top_node_id
     bucket_size
+    max_depth
+    total_width
   )],
 };
 
@@ -70,10 +72,12 @@ sub init_storage {
   my $index   = $self->index;
   my $storage = $self->storage;
 
-  # stored bucket_size for persistent indexes
+  # stored bucket_size/max_depth for persistent indexes
   $self->{bucket_size} = $storage->get_option('bucket_size');
-  # or use configured one
+  $self->{max_depth}   = $storage->get_option('max_depth');
+  # or use configured ones
   $self->{bucket_size} = $index->bucket_size if not defined $self->bucket_size;
+  $self->{max_depth}   = $index->max_depth   if not defined $self->max_depth;
 
   $self->{top_node_id} = $storage->get_option('top_node_id');
   if (not defined $self->top_node_id) {
@@ -89,6 +93,8 @@ sub init_storage {
     $self->{top_node_id} = $storage->store_node($node);
     $self->_make_bucket_for_node($node, $storage);
   }
+
+  $self->{total_width} = $index->limit_x_up - $index->limit_x_low;
 }
 
 sub insert {
@@ -112,6 +118,17 @@ SCOPE: {
         my $items = $bucket->items;
         if (@$items < $self->{bucket_size}) {
           # sufficient space in bucket. Insert and return
+          push @{$items}, [$id, $x, $y];
+          $storage->store_bucket($bucket);
+          return();
+        }
+        # check whether we've reached the maximum depth of the tree
+        # and ignore bucket size if necessary
+        # ( total width / local width ) = 2^( depth )
+        elsif ($nxy->[XUP] - $nxy->[XLOW] <= 0.
+               or log($self->total_width / ($nxy->[XUP]-$nxy->[XLOW])) / log(2) >= $self->max_depth)
+        {
+          # bucket at the maximum depth. Insert and return
           push @{$items}, [$id, $x, $y];
           $storage->store_bucket($bucket);
           return();
@@ -385,7 +402,7 @@ Steffen Mueller, E<lt>smueller@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2010 by Steffen Mueller
+Copyright (C) 2010-2011 by Steffen Mueller
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.1 or,

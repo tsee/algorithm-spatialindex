@@ -36,6 +36,7 @@ use Class::XSAccessor {
     limit_z_low
     limit_z_up
     bucket_size
+    max_depth
   )],
 };
 
@@ -51,6 +52,7 @@ sub new {
     limit_z_low => -100,
     limit_z_up  => 100,
     bucket_size => 100,
+    max_depth   => 20,
     %opt,
   } => $class;
 
@@ -125,6 +127,7 @@ Algorithm::SpatialIndex - Flexible 2D/3D spacial indexing
     limit_y_low => -100,
     limit_y_up  => 100,
     bucket_size => 100,
+    max_depth   => 20,
   );
   
   # fill (many times with different values):
@@ -184,7 +187,16 @@ The number of items to store in a single leaf node (bucket). If this
 number is exceeded by an insertion, the node is split up according
 to the chosen strategy.
 
-C<bucket_size> defaults to 100.
+C<bucket_size> defaults to 100. See also C<max_depth> below.
+
+=item max_depth
+
+The maximum depth of the underlying tree. There can be a collision
+of limiting the bucket size with limiting the maximum depth of the
+tree. If that is the case, the maximum depth takes precedence over
+limiting the bucket size.
+
+C<max_depth> defaults to 20.
 
 =head2 insert
 
@@ -225,7 +237,7 @@ Steffen Mueller, E<lt>smueller@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2010 by Steffen Mueller
+Copyright (C) 2010-2011 by Steffen Mueller
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.1 or,
