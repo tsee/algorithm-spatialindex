@@ -1,5 +1,12 @@
 Revision history for Perl extension Algorithm::SpatialIndex
 
+0.06   Wed Jun  1 00:33:00 CEST 2011
+  - Extended the API for buckets.
+  - Made bucket implementation pluggable for optional, more efficient
+    implementations.
+  - Delegate filtering for rectangles to the bucket implementation
+    if possible.
+
 0.05   Sat Feb 26 14:15:00 CEST 2011
   - Introduced a default maximum depth of the trees of 20 levels.
     This takes precedence over limited bucket size and thus fixes
