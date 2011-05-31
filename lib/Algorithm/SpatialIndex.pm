@@ -151,6 +151,21 @@ and an experimental database-backed storage
 
 B<NOTE: This is an experimental release. There must be bugs.>
 
+The functionality is split between pluggable storage backends
+(see L<Algorithm::SpatialIndex::Storage>) and I<strategies>
+(see L<Algorithm::SpatialIndex::Strategy>, the latter of which
+implement the actual indexing algorithm, usually some form of tree.
+
+For the basic quad tree (L<Algorithm::SpatialIndex::Strategy::QuadTree>)
+and oct tree strategies, the tree is built from
+L<Algorithm::SpatialIndex::Node>s. For each leaf node of the tree,
+the storage contains a I<bucket> (L<Algorithm::SpatialIndex::Bucket>).
+The buckets are basically dumb, linear complexity storage for 
+items. Each item is simply an array reference containing an
+id followed by two or more coordinates. The dimensionality
+depends on the strategy. For example,
+quad trees are two-dimensional, oct trees three-dimensional.
+
 =head2 new
 
 Creates a new spatial index. Requires the following parameters:
@@ -206,6 +221,20 @@ item id, an x-, and a y coordinate as arguments.
 For three-dimensional spatial indexes such as an oct tree,
 you must pass three coordinates.
 
+=head2 bucket_class
+
+The class name of the bucket implementation to use for
+the given tree. Defaults to using C<Algorithm::SpatialIndex::Bucket>.
+May be either a fully qualified class name or just the
+fourth level of the namespace, implicitly prefixed
+by C<Algorithm::SpatialIndex::Bucket::>.
+
+All storage engines and strategies must
+use the C<bucket_class> accessor of the storage engines
+when constructing new buckets to remain pluggable:
+
+  $storage->bucket_class->new(...)
+
 =head2 get_items_in_rect
 
 Given the coordinates of two points that define a rectangle
@@ -222,6 +251,13 @@ Usage for 2D:
 Usage for 3D:
 
   $idx->get_items_in_rect($x1, $y1, $z1, $x2, $y2, $z2);
+
+If the chosen bucket implementation exposes a method of the
+name C<items_in_rect>, it will be called instead of
+manually filtering the items returned from
+C<$bucket-E<gt>items()>. This is intended as an optimization.
+If you're just going to implement an O(n) scan on your bucket,
+don't bother.
 
 =head1 SEE ALSO
 
