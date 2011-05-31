@@ -438,7 +438,7 @@ sub fetch_bucket {
     next if not defined $item->[0];
     push @$items, $item;
   }
-  my $bucket = Algorithm::SpatialIndex::Bucket->new(node_id => $node_id, items => $items);
+  my $bucket = $self->bucket_class->new(node_id => $node_id, items => $items);
   return $bucket;
 }
 
