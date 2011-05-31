@@ -14,7 +14,7 @@ use lib $tlibpath;
 if (not eval {require DBI; require DBD::SQLite; 1;}) {
   plan skip_all => 'These tests require DBI and DBD::SQLite';
 }
-plan tests => 64;
+plan tests => 71;
 
 my $dbfile = '31strategy-quadtree-dbi.test.sqlite';
 unlink $dbfile if -f $dbfile;

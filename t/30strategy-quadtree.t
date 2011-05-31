@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 63;
+use Test::More tests => 70;
 use Algorithm::SpatialIndex;
 
 my $tlibpath;

@@ -99,6 +99,7 @@ sub run {
            '>=', $coords->[2], 'Node upper z boundary okay');
 
     ok(defined($index->storage->fetch_bucket($node->id)), 'Node has bucket == leaf');
+    ok($index->storage->fetch_bucket($node->id)->isa($index->storage->bucket_class), 'bucket is of bucket_class');
   }
 
 
