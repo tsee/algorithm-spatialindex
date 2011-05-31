@@ -13,11 +13,15 @@ sub item_coord_types { qw(double double double) }
 sub filter_items_in_rect {
   my ($self, $xl, $yl, $zl, $xu, $yu, $zu, @nodes) = @_;
   my $storage = $self->storage;
+  if ($storage->bucket_class->can('items_in_rect')) {
+    return map { @{ $storage->fetch_bucket($_->id)->items_in_rect($xl, $yl, $zl, $xu, $yu, $zu) } }
+           @nodes;
+  }
   return grep $_->[1] >= $xl && $_->[1] <= $xu &&
               $_->[2] >= $yl && $_->[2] <= $yu &&
               $_->[3] >= $zl && $_->[3] <= $zu,
          map { @{ $storage->fetch_bucket($_->id)->items } }
-         @nodes
+         @nodes;
 }
 
 1;
