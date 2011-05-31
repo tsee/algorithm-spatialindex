@@ -333,7 +333,7 @@ sub _make_bucket_for_node {
   my $items = shift || [];
   $node_id = $node_id->id if ref $node_id;
 
-  my $b = Algorithm::SpatialIndex::Bucket->new(
+  my $b = $storage->bucket_class->new(
     node_id => $node_id,
     items   => $items,
   );

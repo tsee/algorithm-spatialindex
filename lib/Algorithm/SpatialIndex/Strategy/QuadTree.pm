@@ -115,10 +115,9 @@ SCOPE: {
     SCOPE: {
       my $bucket = $storage->fetch_bucket($node->id);
       if (defined $bucket) {
-        my $items = $bucket->items;
-        if (@$items < $self->{bucket_size}) {
+        if ($bucket->nitems < $self->{bucket_size}) {
           # sufficient space in bucket. Insert and return
-          push @{$items}, [$id, $x, $y];
+          $bucket->add_items([$id, $x, $y]);
           $storage->store_bucket($bucket);
           return();
         }
@@ -129,7 +128,7 @@ SCOPE: {
                or log($self->total_width / ($nxy->[XUP]-$nxy->[XLOW])) / log(2) >= $self->max_depth)
         {
           # bucket at the maximum depth. Insert and return
-          push @{$items}, [$id, $x, $y];
+          $bucket->add_items([$id, $x, $y]);
           $storage->store_bucket($bucket);
           return();
         }
@@ -251,7 +250,7 @@ sub _make_bucket_for_node {
   my $items = shift || [];
   $node_id = $node_id->id if ref $node_id;
 
-  my $b = Algorithm::SpatialIndex::Bucket->new(
+  my $b = $storage->bucket_class->new(
     node_id => $node_id,
     items   => $items,
   );
