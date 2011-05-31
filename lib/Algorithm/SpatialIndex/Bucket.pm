@@ -40,6 +40,13 @@ Algorithm::SpatialIndex::Bucket - A container for items
 
 =head1 DESCRIPTION
 
+This document describes the minimum API that needs to be
+implemented for classes that can be used as buckets
+(more or less: leaf nodes) in the spatial index.
+See the main documentation in L<Algorithm::SpatialIndex>
+for an explanation of how alternative bucket implementations
+can be used.
+
 =head1 METHODS
 
 =head2 new
