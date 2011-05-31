@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp qw(croak);
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use Module::Pluggable (
   sub_name    => 'strategies',
