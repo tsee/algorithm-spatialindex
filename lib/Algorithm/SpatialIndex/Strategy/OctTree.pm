@@ -362,14 +362,11 @@ sub find_node_for {
 }
 
 # TODO: This is almost trivial to rewrite in non-recursive form
-SCOPE: {
-  no warnings 'recursion';
-  sub _find_node_for {
-    my ($self, $x, $y, $z, $storage, $node) = @_;
+sub _find_node_for {
+  my ($self, $x, $y, $z, $storage, $node) = @_;
 
-    my $snode_ids = $node->subnode_ids;
-    return $node if not @$snode_ids;
-
+  my $snode_ids = $node->subnode_ids;
+  while (@$snode_ids) {
     # find the right sub node
     my ($xsplit, $ysplit, $zsplit) = @{$node->coords}[XSPLIT, YSPLIT, ZSPLIT];
     my $subnode_id;
@@ -394,10 +391,11 @@ SCOPE: {
       }
     }
 
-    my $snode = $storage->fetch_node($subnode_id);
-    return $self->_find_node_for($x, $y, $z, $storage, $snode);
+    $node = $storage->fetch_node($subnode_id);
+    $snode_ids = $node->subnode_ids;
   }
-} # end SCOPE
+  return $node;
+}
 
 
 sub find_nodes_for {
