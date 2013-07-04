@@ -23,7 +23,7 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile", "", "");
 ok(defined($dbh), 'got dbh');
 
 END {
-  unlink $dbfile if $do_unlink;
+  unlink $dbfile if $do_unlink and defined $dbfile and -f $dbfile;
 }
 
 use Algorithm::SpatialIndex::QTreeTest;
