@@ -213,6 +213,8 @@ limiting the bucket size.
 
 C<max_depth> defaults to 20.
 
+=back
+
 =head2 insert
 
 Insert a new item into the index. Takes the unique
